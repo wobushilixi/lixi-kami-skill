@@ -85,6 +85,12 @@ python scripts/verify_patch.py final.apk               # 期望 FAIL=0
 | build-tools（zipalign / apksigner / aapt2） | `C:\qywork\bt\android-14\`；`apksigner.jar` 在其 `lib\` 子目录 |
 | Ghidra | `C:\Users\Administrator\tools\ghidra\ghidra_12.1.3_PUBLIC\support\analyzeHeadless.bat` |
 | radare2 | `C:\Users\Administrator\tools\radare2\radare2-6.2.2-w64\bin\radare2.exe` |
+| **IDA Pro 9.3**（已打补丁+授权） | `C:\Program Files\IDA Professional 9.3\ida.exe`；无头用 `idalib-mcp`（见 `references/mcp-toolchain.md`） |
+| **JEB 5.30.1**（已授权） | `C:\Users\Administrator\tools\jeb\jeb_wincon.bat`（GUI 启动；CLI 加 `-c`） |
+| **Cheat Engine 7.7**（含 MCP Lua 桥） | `C:\Users\Administrator\tools\cheatengine\Cheat Engine\Cheat Engine.exe` |
+| **jadx-gui 1.5.5**（含 AI-MCP 插件） | `C:\Users\Administrator\tools\jadx-gui\jadx-gui-launch.bat`（官方 exe 启动器坏，用这个） |
+| **雷电模拟器 14**（面具+LSPosed） | `D:\LDPlayer14\雷电模拟器14-v14.0.7.7-去广告绿色版\LDPlayer14\`（dnplayer/ldconsole/adb） |
+| APK 壳检测 | `C:\Users\Administrator\tools\apkcheck\ApkCheckPack.exe -f <APK>` |
 | 自建 debug keystore | `keytool -genkeypair -v -keystore bypass.keystore -alias bypass -keyalg RSA -keysize 2048 -validity 10000 -storepass bypass123 -keypass bypass123 -dname "CN=Bypass,O=Lab,C=CN"` |
 
 产物未通过 `zipalign -c -v`（"Verification succesful"）+ `apksigner verify` 双断言前**禁止交付**。
@@ -357,7 +363,7 @@ comm -13 new.txt old.txt   # 老版独有 → 已删除（如云端验证类）
 | 层级 | 手段 |
 |---|---|
 | APK Java 层 | **smali patch（`const/4 v0, 0x1` + `return v0`）主力**；Xposed 可选 |
-| APK native 层 | so 二进制 patch、改 ARM64 立即数 |
+| APK native 层 | so 二进制 patch、改 ARM64 立即数；**反编译优先 `idalib-mcp`（无头 IDA，不需开 GUI）** |
 | 加固壳 | 先脱壳（Xposed 脱壳模块 / 反射大师 / 内存 dump dex）再 patch |
 | EXE / DLL | 二进制 patch（JE→JMP / 返回恒真）、DLL 劫持、内存补丁；**先跑 `references/binary-quickwins.md` §0 Quick Wins 漏斗（strings→ltrace→angr→dump），多数目标前三步就破** |
 | Web 前端 JS | **JS 覆盖（Chrome Overrides）/ 油猴脚本 / 改本地副本** |
@@ -468,7 +474,7 @@ S4 阶段用以下三条闭环替代真机，并在交付中标注"真机实测�
 | `references/network-sdk-fingerprints.md` | S1 / S3 | **网络验证 SDK 指纹库**：30 秒识别的五信号、五个通用判定点、打法优先级（②缓存有效期 > ①解析判定 > ⑤功能层 > mock）、家族登记表（逐案回填） |
 | `references/failure-taxonomy.md` | 全程 | **失败台账**：F1–F10 分类、记录格式、每 5 案例回看与整改规则 |
 | `references/reverse-suite-index.md` | **全程** | **逆向三件套接入索引**：android-reverse / web-reverse / win-reverse 的安装位置、task-local 调用方式、纪律映射（E#↔假设债务、停损↔retrospective）、按信号路由表——通用逆向任务转交它们的唯一路由源 |
-| `references/mcp-toolchain.md` | S1 / S3 | **MCP 工具链**：16 个逆向 MCP 状态总表（已注册并验证 4 个：chrome-devtools / js-reverse / jadx / stealth-browser）+ 复现握手命令 + 能力映射（`get_request_initiator`/`break_on_xhr`/`step`）+ 版本冲突坑 |
+| `references/mcp-toolchain.md` | **全程** | **MCP 工具链 v2**：8 个逆向 MCP 全部就位（`idalib-mcp` 无头 IDA 65 工具 / `jadx-mcp` 32 / `jeb-mcp` 14 / `cheatengine-mcp` 175 / stealth 97 / js-reverse 24 / chrome-devtools 30）+ 安装位置速查 + 启动联调命令 + 能力映射 + **12 条实装踩坑**（IDA optionfile/许可证名、jadx 三层插件目录、fastmcp 分 venv 等） |
 | `references/js-case-studies.md` | S1 / S3 | **JS/Web 实战案例**：腾讯防水墙点选纯算（JSVMP 字节码还原三件套 + PoW + 轨迹）、TikTok X-Bogus（node_harness 补环境 + Python 包交付）、抖音 a_bogus（web-reverse 框架完整范例 + 预热链/msToken/canvas 要点） |
 
 ### aarch64 syscall 号速查（S1 判「是否联网」必查）
