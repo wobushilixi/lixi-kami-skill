@@ -34,7 +34,7 @@ S0 分诊 → S1 分析 → S2 方案 → S3 逆向 → S4 测试
 
 | 阶段 | 做什么 | 出口标准 |
 |---|---|---|
-| **S0 分诊** | 五问：有效样本 / 判定位置 / 可改造性 / 动态能力 / 家族已知度；定路线 + 预期档位 + 止损线 | 《S0 分诊结论》（模板见 reference），判"不可达"则转替代输出 |
+| **S0 分诊** | **工具盘点（强制第一步，30 秒）** + 五问：有效样本 / 判定位置 / 可改造性 / 动态能力 / 家族已知度；定路线 + 预期档位 + 止损线 | 《S0 分诊结论》（含本机可用工具与选型），判"不可达"则转替代输出 |
 | **S1 分析** | 建档、查壳与对抗层、架构分类 A/B/C/D、定位判定点 | 有《分析报告》：壳结论 + 架构 + 候选判定点清单 |
 | **S2 方案** | 出 ≥2 候选方案、推荐、风险、回退路径 | 有明确推荐方案；普通模式等确认，预授权模式直接开工 |
 | **S3 逆向** | 实施补丁：patch / Hook / keygen / mock / JS 覆盖 | 产物落盘（补丁文件 + diff），原文件有 `.bak` |
@@ -190,6 +190,27 @@ S2 方案：推荐 <方案名>
 | Q3 | **重打包**这条路通不通？（签名校验 / 完整性 / 环境检测 / 强壳） | 通 / 不通 | 不通 → 运行时或仿真路线，别先花时间改 smali |
 | Q4 | **动态能力**：root 真机 / 模拟器 / 无设备？ | 三选一 | 无设备时：纯 Java 用模拟器、本地算法用 **unicorn 仿真**、其余靠 S4 收口 |
 | Q5 | **家族已知度**：已知网络验证 SDK / 壳 / 开源卡密系统？ | 命中即写 | 命中走现成打法（`network-sdk-fingerprints.md` 等），不重复造轮子 |
+
+### S0.1 工具盘点（强制第一步，30 秒）——「指定软件优先，别手搓」
+
+**动手第一件事**：跑 `python scripts/tool_inventory.py`（输出本机可用工具 + 推荐路线；写 JSON 加 `--json work/tools.json`）。
+无法跑脚本（客户机/无 Python）时，手工核对下表关键项。
+
+**铁律：这台机器上装了什么专业工具，就用什么。**
+装了 IDA 却手搓 capstone 反汇编、装了 jadx 却手动解 dex、装了 CE 却盲猜内存——属明令禁止的效率浪费；
+手写脚本只在**所有专业工具都不存在**时作为兜底。
+
+| 反编译需求 | 优先级（高 → 低，**用第一个可用的**） |
+|---|---|
+| **native / so / ELF / PE** | **`idalib-mcp`（无头 IDA，首选，连 GUI 都不用开）** → IDA GUI（`ida-pro-mcp`）→ JEB（`jeb-mcp`，重度混淆/ARM 强）→ Ghidra headless → radare2 → 兜底：`lief`/`capstone` 手搓（仅当以上全无） |
+| **APK / DEX（Java 层）** | **`jadx-mcp`（先起 jadx-gui，等 8650 端口就绪）** → jadx CLI → apktool + smali → JEB（重混淆/加固脱壳后） |
+| **动态 / 内存** | `cheatengine-mcp`（内存读写/扫描/指针链，175 工具）→ x64dbg → Frida（本机安卓端不可用时走静态） |
+| **Android 运行环境** | 雷电模拟器（`ldconsole.exe launch --index 0`）+ 自带 adb → 真机 |
+| **.NET / CLR** | dnSpy → ILSpy → de4dot 去混淆 |
+| **Web 签名/前端** | `js-reverse-mcp`（断点/initiator）→ `chrome-devtools-mcp` → `stealth-browser-mcp`（被风控时） |
+
+**盘点结果必须进《分析报告》第一节**：本机可用工具清单 + 本次选用的工具 + 缺失项的替代方案。
+安装/联调细节（各工具路径、启动命令、踩坑）见 `references/mcp-toolchain.md`。
 
 **输出三件套**：① 推荐路线 ② 预期档位（高 / 中 / 低 / 不可达，须带依据）③ 止损条件。
 
@@ -464,6 +485,7 @@ S4 阶段用以下三条闭环替代真机，并在交付中标注"真机实测�
 | `scripts/verify_patch.py` | S4 | **产物自检**：smali 语法与寄存器越界 / 死代码；APK 的 dex、manifest、v1+v2 签名 |
 | `scripts/zipalign4.py` | S4（强制） | 纯 Python 对齐（不依赖 build-tools）：`check` 检查、`in out` 对齐；未对齐 = 装不上（-124）。**v2 修复版**：旧版会写坏 zip（中央目录偏移失效）且自检静默放行；v2 带结构自检 + 全条目 CRC 可读性检查，与官方 `zipalign.exe -c -v` 交叉验证一致 |
 | `scripts/s4_pipeline.py` | S4（首选） | **一键流水线**：回编→对齐→签名(v1+v2+v3)→三重验证，顺序固化；中文路径自动转 ASCII、清理 .bak、自动生成 debug keystore；实测真实 95MB 解包目录 6/6 步通过 |
+| `scripts/tool_inventory.py` | **S0（强制第一步）** | **本机工具盘点**：扫 IDA/JEB/jadx/Ghidra/r2/CE/x64dbg/Frida/adb/apktool/模拟器/Python 库/MCP 注册表 → 输出可用清单 + 「指定软件优先」的推荐路线；`--json` 落档进分析报告 |
 | `scripts/emu_check.py` | S1 / S3 / S4 | **离线仿真校验函数（Unicorn）**：无设备/无 Frida 时把 .so 里的判定函数跑起来 —— 判定点定位自证、补丁差分验证（`--patch` 前后翻转）、接受集搜索、内存 dump；含假 JNIEnv、依赖库加载（`--dep`）、libc/C++ 运行时桩。见 `references/unicorn-emu.md` |
 | `scripts/elf_patch.py` | S1 / S3 | ELF 卡密门控定位与 patch：`--str auto` 搜验证字符串、`--func` 符号反修饰、`--to-next` / `--nop` 改分支 |
 | `scripts/elf_kami_xref.py` | S1 / S3 | **aarch64 PLT 调用点定位**（不依赖符号表）：解析 `.rela.plt` + `.plt` 结构算出每个导入的桩地址，capstone 全量反汇编匹配 `bl #桩` 调用点 |
