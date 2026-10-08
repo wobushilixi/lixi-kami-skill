@@ -1,0 +1,97 @@
+# 外部知识库索引
+
+> **路径占位符说明**：本文中的 `$ROOT_KB` / `$REVERSE_KB` / `$REVERSE_SKILL_DIR` 是占位符，请替换为你本机实际路径；没有对应资料时该节忽略即可。
+
+本 Skill 自带的是**方法与流程**；两个本地知识库是**深度资料**，按需查阅，不要重复搬运内容。
+
+## 一、F:\知识库\Root知识库（Android Root 全生态，75 篇 / 4.5 万行）
+
+适用：**外挂 / 游戏辅助 / 带环境检测的 App**。卡密绕过之后能不能跑起来，靠这里。
+
+| 目录 | 什么时候查 | 代表文件 |
+|---|---|---|
+| `01-Root框架底层原理` | 选 Root 方案、理解注入点 | Magisk / KernelSU / APatch 架构解析、三大框架对比选型 |
+| `02-模块开发实战` | 写 Magisk / Zygisk 模块 | 模块结构拆解、module.prop、跨框架兼容 |
+| `03-隐藏与反检测技术` | **过 Root 检测**（最常用） | 应用层/系统层 Root 检测大全、风险环境检测、PlayIntegrity、SUSFS、银行与游戏绕过案例 |
+| `04-进程管理与保活` | 注入与 Hook 原理 | 进程注入与 Hook 技术、进程隐藏与伪装 |
+| `06-源码深度分析` | 需要源码级确认 | ZygiskNext、Shamiko、TrickyStore、PlayIntegrityFix、LSPosed 源码分析 |
+| `07-检测与对抗模块` | **过检测工具**（Momo / Ruru / Hunter） | 各工具检测原理与对抗、ACE 最新检测变化 |
+| `08-实战案例` | 要照抄完整流程 | 王者荣耀 / 三角洲 / CF / 银行 App 隐藏全流程 |
+| `11-拓展专题` | Bootloader 解锁、LSPosed 模块开发、SELinux | 05-LSPosed 与 Xposed 模块开发入门 |
+| `12-ACE对抗专题` | **腾讯系手游外挂**（用户主场景） | ACE SDK 检测项逐项修复、网络层对抗边界、模拟器对抗、一键配置清单 |
+
+检索方法（全文带 YAML frontmatter，用 keywords 字段最快）：
+
+```bash
+grep -rn "keywords" "F:/知识库/Root知识库" | grep -iE "隐藏|检测|root|模拟器|ACE"
+# 或直接找标题
+find "F:/知识库/Root知识库" -name "*隐藏*"
+```
+
+入口文件：`00-AI导航.md`（意图路由表 + 版本基线 + 术语别名）—— **AI 调用前先读它**。
+
+## 二、F:\知识库\逆向知识库（渗透与逆向，381 文件：198 md + 181 py）
+
+适用：**分析方法、工具脚本、Web 与二进制分析**。
+
+| 目录 | 对本 Skill 的用途 |
+|---|---|
+| `逆向分析类/加壳与脱壳` | S1 脱壳（每个目录含 `SKILL.md` + `scripts/script.py`） |
+| `逆向分析类/混淆还原` | S1 代码混淆（ProGuard / OLLVM / 控制流平坦化）还原 |
+| `逆向分析类/密码算法识别` | S1/S3 识别卡密算法用的哈希与加密（对应 A 类 keygen） |
+| `逆向分析类/运行时Hook与注入` | S3 Hook 方案（本 Skill 默认静态，需要时用） |
+| `逆向分析类/静态分析`、`PE文件分析`、`ELF文件分析` | S1 Windows / native 分析 |
+| `逆向分析类/密码算法识别` | 卡密算法识别 |
+| `移动端攻击类/APK静态分析` | S1 APK 分析流程 |
+| `移动端攻击类/App动态调试`、`移动流量分析与抓包` | S1/S4 动态与抓包 |
+| `移动端攻击类/移动数据存储泄露` | S1 找本地缓存的卡密状态（SharedPreferences / SQLite） |
+| `Web攻击类/JWT攻击`、`API攻击` | **Web 卡密**：token / JWT 伪造、接口验证 |
+| `Web攻击类/XSS与前端攻击` | Web 前端判定改写 |
+| `爆破类-口令哈希破解` | A 类卡密若用弱算法时的离线验证（谨慎，仅本地） |
+| `方法论框架类/渗透测试流程`、`报告模板与撰写` | 交付报告结构 |
+
+脚本可直接调用（不必复制进 Skill）：
+
+```bash
+ls "F:/知识库/逆向知识库/逆向分析类/加壳与脱壳/scripts/"
+# 需要时直接 python 运行，或读 script.py 看用法
+```
+
+## 三、F:\破解and逆向分析\reverse-skill（538 文件的逆向/安全 skill 集合）
+
+本机已有这套包，**不复制内容，按需路由**。
+
+| 入口 | 用途 |
+|---|---|
+| `RULES_zh.md` | **行为规范总纲**：激活与同意门、触发关键词、路由入口、**任务完成硬性 Checklist**、**Anti-Laziness 借口反驳表**、任务完成自检 |
+| `README_AI.md` | AI 引导与部署路由（含 consent-gated 设置流程） |
+| `skills/MASTER-ROUTING.md` + `skills/INDEX.md` | 全部专项 skill 的总路由表 |
+| `skills/<name>/SKILL.md` | 专项：apk-reverse、ida-reverse、ghidra-reverse、binary-ninja-reverse、dotnet-reverse、firmware-pentest、binary-diff、ctf-sandbox、field-journal、case-review、browser-automation、cloud-k8s、database-security… |
+| `scripts/`、`kali/`、`burp-mcp-full/`、`plugins/` | 工具脚本、渗透环境、Burp MCP、插件 |
+
+用法：先读 `skills/MASTER-ROUTING.md` 找对应专项 skill → 再读该专项的 `SKILL.md`；需要工具清单时跑 `skills/scripts/refresh-tool-index.ps1`（Windows）或 `.sh`（Linux/Kali）生成本机 `tool-index.md`。
+
+**与本 Skill 的分工**：卡密/授权验证链路走 kami-bypass（S1–S4）；通用逆向与渗透专项、需要特定工具链时走 reverse-skill 的对应专项 skill。
+
+## 四、mattpocock/skills（工程方法论来源，非逆向内容）
+
+`https://github.com/mattpocock/skills`（MIT，27 个技能）是**面向软件工程**的 Agent 技能库：TDD、领域建模、code review、grilling 访谈、spec/tickets，**不含逆向内容**。因此不整体搬入，只提炼 4 条可迁移纪律（严格诊断循环、交付双审、先问清再动手、对照实验），已写入 `references/engineering-discipline.md` 并落进 S1–S4 与交付自检。
+
+需要完整方法论时可安装：`claude plugins install mattpocock-skills` 或 `npx skills@latest add mattpocock/skills`——对本 Skill 只需那四条纪律，逆向主战场仍是本 Skill 的 references 与 scripts。
+
+## 五、与本 Skill 阶段的对应
+
+| 阶段 | 本 Skill 用什么 | 不够时查哪 |
+|---|---|---|
+| S1 分析 | `packer_detect.py` / `kami_scan.py` / `web_kami_scan.py` | 逆向知识库（加壳脱壳、混淆还原、密码算法识别）；Root 库 03/07（是否带环境检测） |
+| S2 方案 | `packer-analysis.md` 报告模板 | Root 库 08 实战案例；逆向库 方法论框架类 |
+| S3 逆向 | `smali_kami_patch.py` / `xposed_kami_module.java` | 逆向库 运行时Hook与注入；Root 库 11-05（LSPosed 模块开发） |
+| S4 测试 | 回编 / 签名 / mock | 逆向库 移动流量分析与抓包 |
+| 可选：真机实测 | 三态验证 | **Root 库 03/12**（环境隐藏与自检清单）；逆向库 App动态调试 |
+
+## 六、使用原则
+
+1. **不搬运**：知识库内容不复制进 Skill，只在需要时读取并引用路径。
+2. **先本地后外部**：Skill 自带脚本能解决的先跑脚本，不足再查知识库。
+3. **引用要具体**：报告里写清结论来自哪个文件（路径 + 章节），便于复核。
+4. **版本敏感**：Root 生态版本迭代快，涉及模块版本时以知识库 `00-AI导航.md` 的版本基线为准。
