@@ -40,6 +40,18 @@ python scripts/packer_detect.py <target> --deep        # 额外查混淆与可�
 5. `IsDebuggerPresent` / `NtQueryInformationProcess` 大量出现 → 反调试。
 6. `ChecksumMappedFile` / `EnumProcessModules` → 完整性自校验。
 
+### ELF / so 人工复核清单（Android 与 Linux 通用）
+
+1. **别信扩展名**：先读文件头。`.sh` 可能是 `#!/bin/sh` 自解压包装（`sed '1,/^__PAYLOAD__$/d' | gzip -cd | exec`），真身是后面的 ELF —— 先剥壳再看。
+2. `e_shnum` 极小（如 4，仅 `.dynstr/.dynsym/.shstrtab`）→ 无 section 表，**必须按 PT_LOAD + PT_DYNAMIC 解析**（脚本按 `.rela.dyn` 找重定位会全部失效，GOT 槽空 → 仿真第一次调用就跳 0）。
+3. PT_LOAD 出现 `filesz=0 / memsz=巨大`（10MB/55MB 级）→ 运行时填充区；`PT_DYNAMIC` 里 `DT_INIT/DT_PREINIT_ARRAY` 指向的内容多半是"压栈常量 + 远跳"的桩。
+4. **R_AARCH64_ABS64 的 addend 是密文**（形如 `add=-0x4911391e028021d7`）→ 重定位被壳加密、运行时自解 → IDA/Ghidra 直接看全是歪地址。
+5. 判"代码 / 加密数据"用**解码失败率**而不是只看熵：4KB 对齐取 4 字节喂 capstone，实测随机数据失败率 ≈64.5%，真实 aarch64 代码 ≈8–15%（按此可秒级切分 79MB 文件）。
+6. **垃圾指令插入混淆**的指纹：`eor/ror/rev/orn/eon/adc/bic` 占比异常高、`ldr/str` 占比异常低、`ret` 几乎为 0（实测 22 万条指令里 12 个 ret）、大量 `mov/movk` 构造后立刻被覆盖的常量、`cbz/tbz` 依赖"恒 0/恒 1"的运算结果。
+7. 找真实调用：`bl` 可能不指向 PLT —— 商业壳常改成 `adrp x16,#GOT; ldr x17,[x16,#off]; add x16,x16,#off; br x17`。
+   → 用"ADRP 指向 GOT 页 + 后续 ±24 条指令内 `ldr xN,[xM,#imm]`"的模糊匹配反查**壳到底用了哪些导入**（能直接判断"判定位在不在壳里"）。
+8. 中文串只剩壳自己的水印（如 `T-Protector T盾加密保护支持`）→ 业务字符串全在加密层，静态 grep 无用。
+
 ## 二、已知误报（自动判定不可盲信）
 
 | 现象 | 真实原因 | 正确结论 |
@@ -62,6 +74,7 @@ python scripts/packer_detect.py <target> --deep        # 额外查混淆与可�
 | PE 虚拟机壳（VMProtect/Themida） | 难 | 易触发自校验 | 不硬脱，内存补丁 / API Hook | 行为级绕过（mock 服务端） |
 | .NET + IL 混淆 | dnSpy 能看但难读 | 能 | de4dot 去混淆 → dnSpy 改 IL | 动态调试取明文后 patch |
 | ELF / so 加壳 | 看情况 | — | IDA 定位导出 / RegisterNatives 后按偏移 patch | Xposed Hook（可选） |
+| **Android/Linux ELF 商业加密壳（VM 引擎类：T盾/T-Protector 等）** | 否（明文区只有壳） | **不建议**（有全文件 CRC32 自校验） | ① 先查业务方是否另有**登录器 APK**（卡密多半在那里）② 设备侧 root + 内存 dump ③ 壳级仿真（Unicorn，按 PT_DYNAMIC 填 GOT） | 有效卡密 → 抓包 → 改客户端判定分支 / hosts mock |
 
 ## 四、反调试与自校验
 

@@ -51,6 +51,7 @@
 | 至简网络验证 | 含 `至简` / `zhijian` | 待实测回填 |
 | 索玛 SOMA | 含 `soma` / `索玛` | 待实测回填 |
 | 华夏 / 酷爱 / 卡密宝 / 秒卡 等 | 名字直搜 | 待实测回填 |
+| **T盾 T-Protector（t3yanzheng）** | 明文串 `T-Protector T盾加密保护支持\nT盾加密官网https://jiami.t3yanzheng.com`；ELF 无 section 表、PT_LOAD 有 `filesz=0/memsz=几十MB` 的运行时填充段；`tp_sig_status` 导入符号 | **已归族（2026-10-08，kd65 案例）**：这是**加密壳**（Android ARM64，VM 引擎 + 控制流重定向 + 函数调用虚拟化），壳自带全文件 CRC32 自校验；壳本身**不联网**（GOT 零引用 socket/sendto/gethostbyname）→ 作者的业务卡密（可能另接 T3网络验证）在**被加密的负载里**，离线静态不可达；**但壳解密是本地完成的**（仿真可 dump 出明文映像） |
 | **魔改/自研** | 信号只命中 1–2 个，错别字文案、自研域名 | 按 §二 通用结构打，行为等同于"未知家族 SDK" |
 
 **回填义务**：每次做完一个网络验证目标，把「家族名 / 域名特征 / 缓存文件路径 / 判定点文件:行 / 是否带签名」补进本表，
@@ -72,6 +73,28 @@ adb shell "cat /data/data/<包名>/shared_prefs/*.xml" | head -40
 # 4) 抓包比对首次激活 vs 心跳（三态法）
 #   首次：有 card+mac+sign；心跳：通常只有 ticket/token → 判定②④位置
 ```
+
+## 四点五、服务端侧指纹（后台凭证获取用，2026-10-08 补）
+
+> 配套 playbook：`card-server-credential-hunt.md`；入口工具：`scripts/cardserver_recon.py`。
+
+**后台路径高频池**（recon 已内置探测，命中即记）：
+`/admin` `/admin.php` `/admin/login.php` `/manage` `/houtai` `/ht` `/backend` `/console` `/daili`（代理端）/ `/agent` `/merchant`
+
+**服务端特征速判**：
+| 观察 | 推断 |
+|---|---|
+| `X-Powered-By: PHP/5.x~7.x` + 前台"卡密查询/代理" | 国内 PHP 卡密系统（老组件 → 搜版本漏洞） |
+| 响应 `{"code":..., "msg":...}` + `/api/client/` 或 `api.php?act=` | 标准卡密系统 API 层（弱鉴权高发） |
+| robots.txt `Disallow: /admin/` | 作者指路 |
+| ThinkPHP/Laravel 报错页 | 框架版本泄漏 → 对应历史漏洞 |
+| `.git` / 备份包可访问 | **直取级**：还原源码找 DB 配置 → 拿库 |
+| phpMyAdmin 可达 | 弱口令/未授权 → 直改 admin 表 |
+
+**商业平台后台入口（对照归族后细查）**：各家的管理端多在自家域名（如 `xxx.平台域名/admin`），
+自建/魔改系统的后台路径优先**从客户端二进制里提取**（比字典更准）。
+
+---
 
 ## 五、与其它 reference 的衔接
 
