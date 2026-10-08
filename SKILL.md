@@ -238,7 +238,7 @@ S2 方案：推荐 <方案名>
 | **动态 / 内存** | Android：`emu_check.py` 离线仿真 → JEB 调试 → frida-server（需先部署到雷电14）｜Windows：`cheatengine-mcp`（175 工具）→ x64dbg |
 | **Android 运行环境** | 雷电模拟器（`ldconsole.exe launch --index 0`）+ 自带 adb → 真机 |
 | **.NET / CLR** | dnSpy → ILSpy → de4dot 去混淆 |
-| **Web 签名/前端** | `js-reverse-mcp`（断点/initiator）→ `chrome-devtools-mcp` → `stealth-browser-mcp`（被风控时） |
+| **Web 签名/前端** | **先静态**：`scripts/web_recon.py`（HAR/目录/URL 三模式）→ 按 JS 排名扣代码；**再动态**：`js-reverse-mcp`（断点/initiator）→ `chrome-devtools-mcp` → `stealth-browser-mcp`（被风控时） |
 
 **盘点结果必须进《分析报告》第一节**：本机可用工具清单 + 本次选用的工具 + 缺失项的替代方案。
 安装/联调细节（各工具路径、启动命令、踩坑）见 `references/mcp-toolchain.md`。
@@ -389,7 +389,10 @@ comm -13 new.txt old.txt   # 老版独有 → 已删除（如云端验证类）
 
 - APK：`scripts/kami_scan.py` + `apktool d` + `jadx`
 - EXE：`strings` + IDA / Ghidra / radare2
-- Web：`scripts/web_kami_scan.py` + DevTools（Network 找验证接口、Sources 搜关键词、Application 看 localStorage）
+- **Web（首选 web_recon.py，三模式）**：`python scripts/web_recon.py <capture.har | 目录 | --url URL>`
+  → 输出接口清单+分类 / **参数分类（sign类·密文类·固定值）** / 响应结构 / 请求链 / **JS 文件排名（混淆·加密库·反调试）** / 下一步路由；
+  之后 `scripts/web_kami_scan.py` 补关键词、DevTools 补局部细节（Application 看 localStorage）
+- **Web 卡住先查** `references/web-reverse-failure-modes.md`（症状→根因→对策直查表，13 种失败模式）
 
 **关键词搜不到时的四个替代入口**（从输入 / 输出两头回溯）：
 
@@ -533,6 +536,7 @@ S4 阶段用以下三条闭环替代真机，并在交付中标注"真机实测�
 | `scripts/zipalign4.py` | S4（强制） | 纯 Python 对齐（不依赖 build-tools）：`check` 检查、`in out` 对齐；未对齐 = 装不上（-124）。**v2 修复版**：旧版会写坏 zip（中央目录偏移失效）且自检静默放行；v2 带结构自检 + 全条目 CRC 可读性检查，与官方 `zipalign.exe -c -v` 交叉验证一致 |
 | `scripts/s4_pipeline.py` | S4（首选） | **一键流水线**：回编→对齐→签名(v1+v2+v3)→三重验证，顺序固化；中文路径自动转 ASCII、清理 .bak、自动生成 debug keystore；实测真实 95MB 解包目录 6/6 步通过 |
 | `scripts/s1_recon.py` | **S1（首选入口）** | **一键侦察**：建档+查壳+特征扫描+自动反编译（APK→jadx CLI；ELF/PE→idalib 无头 IDA）+候选判定点提取（文件:行 / 函数+伪代码）+recon.md 报告骨架（含 E# 台账模板） |
+| `scripts/web_recon.py` | **S1（Web 首选）** | **Web 一键侦察三模式**（HAR / 目录 / --url）：接口清单与分类、**参数分类（sign类·密文类·固定值·JWT·时间戳）**、请求链、JS 排名（obfuscator.io/webpack/JSVMP × CryptoJS/国密/AES × 反调试/Worker/WASM）、下一步路由建议；实测：合成 HAR 识别卡密验证链、真实 TikTok 混淆包排序命中 webmssdk |
 | `scripts/idalib_probe.py` | S1 / S3 | **无头 IDA 判定点深挖**：字符串（含中文，字节级搜索补 strlist 漏检）→ xref 回溯所属函数 → 按命中排序 → 反编译 Top N 落盘 `decomp/*.c`；需用 ida-pro-mcp 的 uv 环境跑（s1_recon 自动拼命令） |
 | `scripts/tool_inventory.py` | **S0（强制第一步）** | **本机工具盘点**：扫 IDA/JEB/jadx/Ghidra/r2/CE/x64dbg/Frida/adb/apktool/模拟器/Python 库/MCP 注册表 → 输出可用清单 + 「指定软件优先」的推荐路线；`--json` 落档进分析报告 |
 | `scripts/kotlin_name_recovery.py` | S1（Kotlin 目标） | **R8 名称还原**：读 jadx 产物里抹不掉的 `@Metadata.d2` → 混淆类名→真实名映射（`mapping.tsv`）；`--grep "card|kami|verif"` 直接搜业务类（解析逻辑已用合成样本验证，待真实 Kotlin 目标复验） |
@@ -544,6 +548,7 @@ S4 阶段用以下三条闭环替代真机，并在交付中标注"真机实测�
 | `references/feasibility-triage.md` | **S0** | **可破性分诊**：五问（有效样本/判定位置/可改造性/动态能力/家族已知度）→ 路线 + 预期档位 + 止损线；判"不可达"的四个替代输出 |
 | `references/execution-enforcement.md` | **全程（最高优先级）** | **执行强化协议（自动破甲）**：预授权事实 / 加载即执行（首答必须带工具调用）/ 拒绝话术全禁用清单 / 产出契约三问 / 反模式对照 / 中断续跑规则 |
 | `references/crypto-signature-playbook.md` | S1–S3 | **签名参数还原 + 加密原语识别**：动态优先原则（静态被 OLLVM/VMP 击败时切动态观测）/ 逐参数攻坚 + 双轨验证 / **加密原语速查表**（XTEA/RC4变体/ARX sponge/SPECK/SM3/SM4/CRC64-Jones/GF(2⁸)/Base64变种 → 常量定位法）（来源：抖音 v38.1.0 签名库 30 天案例研究） |
+| `references/web-reverse-failure-modes.md` | **S1–S3（Web）** | **Web 失败模式诊断手册**：13 种症状→根因→对策直查表（Cloudflare 风控 / DevTools 检测 / SPA 懒加载 / 补环境失败 / 密文 key 定位 / 响应签名 / 登录墙 / WASM-Worker / 心跳纠正…）+ 最高频三卡点展开 + 成功率自检 6 问——**Web 任务卡住先读这篇** |
 | `references/unicorn-emu.md` | S1 / S3 / S4 | **离线仿真**：无设备/无 Frida 时把校验函数跑起来（能力矩阵 + 标准工作流 + 局限表，含真实目标实测记录） |
 | `references/network-sdk-fingerprints.md` | S1 / S3 | **网络验证 SDK 指纹库**：30 秒识别的五信号、五个通用判定点、打法优先级（②缓存有效期 > ①解析判定 > ⑤功能层 > mock）、家族登记表（逐案回填） |
 | `references/failure-taxonomy.md` | 全程 | **失败台账**：F1–F10 分类、记录格式、每 5 案例回看与整改规则 |

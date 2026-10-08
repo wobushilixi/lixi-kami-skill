@@ -1,5 +1,7 @@
 # Web 卡密验证逆向（S1–S4）
 
+> 配套：**先跑** `python scripts/web_recon.py <har|目录|url>`（侦察）→ 卡住查 `web-reverse-failure-modes.md`（症状直查表）→ 签名链细节走 `js-signature-reverse.md`。
+
 适用：网页版卡密/激活码验证系统、网页端会员校验、接口型网络验证、网页外挂/辅助的登录授权页。
 
 ## 一、先判形态（决定打哪一层）

@@ -15,6 +15,7 @@ Android APK · Windows EXE/DLL · Web
 ```bash
 python scripts/tool_inventory.py             # 盘点本机可用工具
 python scripts/s1_recon.py <目标>             # 一键侦察：查壳 + 反编译 + 候选判定点
+python scripts/web_recon.py <har|目录|url>   # Web 侦察：接口/参数分类 + JS 排名
 python scripts/s4_pipeline.py all <解包目录>  # 回编 → 对齐 → 签名 → 验证
 ```
 
