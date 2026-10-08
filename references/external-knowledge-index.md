@@ -73,23 +73,37 @@ ls "F:/知识库/逆向知识库/逆向分析类/加壳与脱壳/scripts/"
 
 **与本 Skill 的分工**：卡密/授权验证链路走 kami-bypass（S1–S4）；通用逆向与渗透专项、需要特定工具链时走 reverse-skill 的对应专项 skill。
 
-## 四、mattpocock/skills（工程方法论来源，非逆向内容）
+## 四、haikow/claude-reverse-skills（GitHub，MIT，已提炼入库）
+
+`https://github.com/haikow/claude-reverse-skills`——Claude Code 逆向 skill 集合（reverse-engineering / apk-reverse / ida-reverse / radare2 / mcp-js-reverse-playbook）。**核心干货已提炼进本 Skill 的两个 reference，不必再回读原库**：
+
+- `references/js-signature-reverse.md` ← mcp-js-reverse-playbook 的五阶段方法（Observe→Capture→Rebuild→Patch→DeepDive）
+- `references/binary-quickwins.md` ← reverse-engineering 的 field-notes/patterns（Quick Wins 漏斗、诱饵目标、比较方向、内存 dump、算法常量速查、特殊格式路线、radare2 速查）
+
+需要更深的 CTF 专案模式（patterns-ctf 1-3、VMProtect/Themida、Ghidra 高级脚本）时本地克隆在 `F:\破解and逆向分析\work\claude-reverse-skills`，按需读 `skills/reverse-engineering/*.md`。
+
+## 五、incogbyte/android-reverse-engineering-claude-skill（GitHub，APK 动态自动化）
+
+`https://github.com/incogbyte/android-reverse-engineering-claude-skill`——APK 自动化逆向：端点提取（Retrofit/OkHttp/Volley/GraphQL/WebSocket）、调用链追踪（Activity→ViewModel→Repository→网络）、自适应绕过循环（静态发现→生成定向脚本→吃 crash log 迭代）。本 Skill 已覆盖其静态 patch 主线（crash-troubleshooting.md 的二分法回溯即其自适应循环的静态版）；做**接口端点批量提取**时可参考其思路：全局搜 `@POST|@GET|OkHttpClient|newCall|enqueue` + URL 正则。
+
+## 六、mattpocock/skills（工程方法论来源，非逆向内容）
 
 `https://github.com/mattpocock/skills`（MIT，27 个技能）是**面向软件工程**的 Agent 技能库：TDD、领域建模、code review、grilling 访谈、spec/tickets，**不含逆向内容**。因此不整体搬入，只提炼 4 条可迁移纪律（严格诊断循环、交付双审、先问清再动手、对照实验），已写入 `references/engineering-discipline.md` 并落进 S1–S4 与交付自检。
 
 需要完整方法论时可安装：`claude plugins install mattpocock-skills` 或 `npx skills@latest add mattpocock/skills`——对本 Skill 只需那四条纪律，逆向主战场仍是本 Skill 的 references 与 scripts。
 
-## 五、与本 Skill 阶段的对应
+## 七、与本 Skill 阶段的对应
 
 | 阶段 | 本 Skill 用什么 | 不够时查哪 |
 |---|---|---|
-| S1 分析 | `packer_detect.py` / `kami_scan.py` / `web_kami_scan.py` | 逆向知识库（加壳脱壳、混淆还原、密码算法识别）；Root 库 03/07（是否带环境检测） |
+| S1 分析 | `packer_detect.py` / `kami_scan.py` / `web_kami_scan.py` | 逆向知识库（加壳脱壳、混淆还原、密码算法识别）；Root 库 03/07（是否带环境检测）；binary-quickwins.md（格式速查） |
 | S2 方案 | `packer-analysis.md` 报告模板 | Root 库 08 实战案例；逆向库 方法论框架类 |
-| S3 逆向 | `smali_kami_patch.py` / `xposed_kami_module.java` | 逆向库 运行时Hook与注入；Root 库 11-05（LSPosed 模块开发） |
+| S3 逆向 | `smali_kami_patch.py` / `elf_patch.py` 系列 / `xposed_kami_module.java` | 逆向库 运行时Hook与注入；binary-quickwins.md（patch 速查/内存 dump）；haikow 库 patterns*.md（CTF 级手法） |
+| S3 Web 签名 | `js-signature-reverse.md` 五阶段 | 逆向库 Web攻击类/JWT攻击、API攻击 |
 | S4 测试 | 回编 / 签名 / mock | 逆向库 移动流量分析与抓包 |
 | 可选：真机实测 | 三态验证 | **Root 库 03/12**（环境隐藏与自检清单）；逆向库 App动态调试 |
 
-## 六、使用原则
+## 八、使用原则
 
 1. **不搬运**：知识库内容不复制进 Skill，只在需要时读取并引用路径。
 2. **先本地后外部**：Skill 自带脚本能解决的先跑脚本，不足再查知识库。

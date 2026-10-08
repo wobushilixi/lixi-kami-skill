@@ -140,6 +140,21 @@ S2 方案：推荐 <方案名>
 
 **路由优先级**：意图命中卡密链路时，本 Skill 优先于 `crack-keygen` 与 `l-license`。
 
+### 安全场景分类路由（覆盖卡密链路涉及的常见安全分类）
+
+| 场景分类 | 本 Skill 对应资产 |
+|---|---|
+| 移动端 / APK | `android-card-key.md`、`apk-embedded-binary-cardkey.md`、`unpack-repack.md`、`android-env-detection.md` |
+| 游戏安全 / 反作弊（Unity / Flutter / 反作弊环境） | `unity-il2cpp.md`、`binary-quickwins.md` §3、`android-env-detection.md` |
+| JavaScript / 前端签名 | `js-signature-reverse.md`、`web-card-key.md`、`web_kami_scan.py` |
+| Web / API | `web-card-key.md`、`js-signature-reverse.md` |
+| 身份 / 凭据 / JWT / OAuth（客户端侧校验环节） | `bypass-playbook.md`（伪造响应/票据分支）+ `js-signature-reverse.md`（签名/token 算法还原） |
+| 支付 / 回调 / 业务逻辑（客户端校验 + 回调判定） | `bypass-playbook.md` 攻击面五层模型 + C 类架构 mock/响应解析 patch |
+| CTF / 逆向与二进制（crackme / 校验算法还原） | `binary-quickwins.md`、`elf-binary-card-key.md`、`elf_patch.py` 系列 |
+| 内存 / 运行时（dump 解密串、运行时状态提取） | `binary-quickwins.md` §1.3、`unpack-repack.md`（内存 dump dex）、`packer-analysis.md` |
+| 恶意样本加固 / 检测（壳与对抗层） | `packer-analysis.md`、`anti-defense.md`、`packer_detect.py` |
+| 工具使用与环境搭建 | `beginner-kit.md` + 本 SKILL.md 资源路径表 |
+
 ---
 
 # S1 分析
@@ -158,6 +173,8 @@ S2 方案：推荐 <方案名>
 3. **引擎识别（packer_detect 已内置，命中必须改道）**：
    - 判定 **Unity IL2CPP**（`libil2cpp.so` + `global-metadata.dat`）→ jadx 路线作废，走 `references/unity-il2cpp.md` 的 Il2CppDumper playbook
    - 判定 **Unity Mono**（`Assembly-CSharp.dll`）→ dnSpy 直接改 DLL，最简单的一条路
+   - 判定 **Flutter**（`libapp.so` + `libflutter.so`，jadx 里业务逻辑几乎全空）→ jadx 路线作废，走 `references/binary-quickwins.md` §3 的 Blutter 路线
+   - 判定 **Python 打包 / Electron / Tauri / Go / Rust**（桌面端常见）→ 同查 `references/binary-quickwins.md` §3 格式速查表
    - **外挂/游戏类目标是 Unity 的概率极高**，不做这步识别就开 jadx = 从第一步就注定失败
 4. 对抗层预判（决定后面会不会白忙）：
    - 签名自校验：`getPackageInfo` + `GET_SIGNATURES` / `Signature` / `checkSign` / `ChecksumMappedFile`
@@ -307,8 +324,9 @@ comm -13 new.txt old.txt   # 老版独有 → 已删除（如云端验证类）
 | APK Java 层 | **smali patch（`const/4 v0, 0x1` + `return v0`）主力**；Xposed 可选 |
 | APK native 层 | so 二进制 patch、改 ARM64 立即数 |
 | 加固壳 | 先脱壳（Xposed 脱壳模块 / 反射大师 / 内存 dump dex）再 patch |
-| EXE / DLL | 二进制 patch（JE→JMP / 返回恒真）、DLL 劫持、内存补丁 |
+| EXE / DLL | 二进制 patch（JE→JMP / 返回恒真）、DLL 劫持、内存补丁；**先跑 `references/binary-quickwins.md` §0 Quick Wins 漏斗（strings→ltrace→angr→dump），多数目标前三步就破** |
 | Web 前端 JS | **JS 覆盖（Chrome Overrides）/ 油猴脚本 / 改本地副本** |
+| Web 接口签名 | **签名链五阶段逆向（`references/js-signature-reverse.md`）**：XHR 断点找 initiator → 采样固定/变化字段 → Node 复现 → 补环境；**能黑盒调用就不白盒还原** |
 | Web 接口 | mock server / 代理改响应 / 构造重放请求 |
 | 网络（通用） | mock server、hosts 重定向、证书 + 代理改响应 |
 | 存储 | 清 SharedPreferences / 注册表 / localStorage，或改写入逻辑 |
@@ -441,6 +459,8 @@ S4 阶段用以下三条闭环替代真机，并在交付中标注"真机实测�
 | `references/crash-troubleshooting.md` | S4 | **闪退/无效排查**：logcat 分诊表、签名校验三层（Java/so/在线）、MT 一键去签、同族判定点漏改、二分法回溯（用户反馈失败时第一篇读） |
 | `references/external-knowledge-index.md` | 全程 | 外部知识库索引（F:\知识库 两个库 + `F:\破解and逆向分析\reverse-skill`，按需深挖） |
 | `references/web-card-key.md` | S1–S4 | **Web 卡密验证逆向全流程** |
+| `references/js-signature-reverse.md` | S1–S4 | **JS 签名链五阶段逆向**：initiator 回溯、XHR 断点、固定/变化字段采样、Node 补环境复现、常见签名方案速查、WASM 黑盒调用（接口带 sign / 加密参数时必读） |
+| `references/binary-quickwins.md` | S1 / S3 | **二进制 Quick Wins 漏斗 + 高级模式**：诱饵目标识别、比较方向、内存 dump 偷答案、angr 符号执行、算法常量速查、Flutter/Go/Rust/WASM/Tauri 等格式路线、radare2 patch 速查、新旧版本 diff |
 | `references/android-card-key.md` | S1–S4 | APK 卡密链路（Java / so / 加固壳） |
 | `references/apk-embedded-binary-cardkey.md` | **S1–S4** | **卡密藏在 `assets/` 伪装 ELF（`.sh`/`.bin`）里**：识别文件头、符号表静态定位判定点、aarch64 跳转改写、APK 侧配套改法、apksigner 正确用法、Ghidra headless 坑、端到端复现 |
 | `references/windows-card-key.md` | S1–S4 | Windows EXE / DLL 卡密链路 |
