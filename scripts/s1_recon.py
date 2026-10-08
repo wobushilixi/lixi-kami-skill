@@ -523,6 +523,41 @@ def main():
                 cand["java"] = picked
                 step("候选判定点(java)", bool(picked),
                      "命中 %d 条 → 打分排序后取前 %d（应用包：%s）" % (len(dedup), len(picked), app_pkg or "未识别"))
+
+                # Kotlin 目标：R8 名称还原（@Metadata.d2 抹不掉）
+                has_kt = False
+                checked = 0
+                for dp2, _, fns2 in os.walk(jout):
+                    for fn2 in fns2:
+                        if not fn2.endswith((".java", ".kt")):
+                            continue
+                        checked += 1
+                        if checked > 400:
+                            break
+                        try:
+                            head = open(os.path.join(dp2, fn2), encoding="utf-8",
+                                        errors="ignore").read(4096)
+                        except Exception:
+                            continue
+                        if "kotlin.Metadata" in head or "@Metadata" in head:
+                            has_kt = True
+                            break
+                    if has_kt or checked > 400:
+                        break
+                if has_kt:
+                    kr = os.path.join(HERE, "kotlin_name_recovery.py")
+                    rc2, o2 = sh([PY, kr, jout, "--out", os.path.join(out, "kotlin_mapping.tsv")],
+                                 timeout=600)
+                    mapf = os.path.join(out, "kotlin_mapping.tsv")
+                    if rc2 == 0 and os.path.exists(mapf):
+                        n_lines = sum(1 for _ in open(mapf, encoding="utf-8")) - 1
+                        rec["kotlin_mapping"] = mapf
+                        step("Kotlin 名称还原(R8对抗)", True,
+                             "%d 个类 → %s（用 --grep 找卡密类：python scripts/kotlin_name_recovery.py %s --grep \"card|kami|verif\"）"
+                             % (n_lines, mapf, jout))
+                        rec["notes"].append("Kotlin 目标：混淆类名已还原到 kotlin_mapping.tsv —— 先按真实名找卡密/网络/校验类，再做候选点复核")
+                    else:
+                        step("Kotlin 名称还原(R8对抗)", False, o2.strip()[:120] if o2.strip() else "失败")
         else:
             step("jadx 反编译", False, "jadx 未装或 --fast；APK 可用 jadx-mcp（GUI）或装 jadx CLI")
 

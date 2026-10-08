@@ -136,7 +136,12 @@ python scripts/verify_patch.py final.apk               # 期望 FAIL=0
 | 过签名校验 | patch 比较分支 / 改 so / MT·NP 管理器一键去签 | Xposed 伪造 Signature |
 | 加固壳 | Xposed 脱壳模块 / 反射大师 / `adb` 读 `/proc/<pid>/maps` 手工 dump dex | — |
 
-**禁止默认推荐 Frida**：本机 Frida 在安卓端不可用，任何方案都不得把 Frida 作为唯一或首选路径。
+**Frida 使用政策（2026-10-08 更新）**：Frida CLI 已装在宿主机；安卓端 frida-server **尚未部署**
+（雷电14 + 面具已就绪，需要时可部署）。因此：
+- 静态优先仍是默认；**需要安卓动态观测时**，按此顺序：`emu_check.py` Unicorn 离线仿真 → JEB 调试器 →
+  部署 frida-server 到雷电14（面具已就绪，`adb push` + 启动即用）
+- 不得把 Frida 作为**唯一**路径（服务端未部署时它就是不可用状态）；部署后可用于 OLLVM/VMP 目标的
+  动态观测（见 `references/crypto-signature-playbook.md` §一：静态被 VMP 击败时切动态）。
 
 ## 触发词
 
@@ -230,7 +235,7 @@ S2 方案：推荐 <方案名>
 |---|---|
 | **native / so / ELF / PE** | **`idalib-mcp`（无头 IDA，首选，连 GUI 都不用开）** → IDA GUI（`ida-pro-mcp`）→ JEB（`jeb-mcp`，重度混淆/ARM 强）→ Ghidra headless → radare2 → 兜底：`lief`/`capstone` 手搓（仅当以上全无） |
 | **APK / DEX（Java 层）** | **`jadx-mcp`（先起 jadx-gui，等 8650 端口就绪）** → jadx CLI → apktool + smali → JEB（重混淆/加固脱壳后） |
-| **动态 / 内存** | `cheatengine-mcp`（内存读写/扫描/指针链，175 工具）→ x64dbg → Frida（本机安卓端不可用时走静态） |
+| **动态 / 内存** | Android：`emu_check.py` 离线仿真 → JEB 调试 → frida-server（需先部署到雷电14）｜Windows：`cheatengine-mcp`（175 工具）→ x64dbg |
 | **Android 运行环境** | 雷电模拟器（`ldconsole.exe launch --index 0`）+ 自带 adb → 真机 |
 | **.NET / CLR** | dnSpy → ILSpy → de4dot 去混淆 |
 | **Web 签名/前端** | `js-reverse-mcp`（断点/initiator）→ `chrome-devtools-mcp` → `stealth-browser-mcp`（被风控时） |
@@ -530,6 +535,7 @@ S4 阶段用以下三条闭环替代真机，并在交付中标注"真机实测�
 | `scripts/s1_recon.py` | **S1（首选入口）** | **一键侦察**：建档+查壳+特征扫描+自动反编译（APK→jadx CLI；ELF/PE→idalib 无头 IDA）+候选判定点提取（文件:行 / 函数+伪代码）+recon.md 报告骨架（含 E# 台账模板） |
 | `scripts/idalib_probe.py` | S1 / S3 | **无头 IDA 判定点深挖**：字符串（含中文，字节级搜索补 strlist 漏检）→ xref 回溯所属函数 → 按命中排序 → 反编译 Top N 落盘 `decomp/*.c`；需用 ida-pro-mcp 的 uv 环境跑（s1_recon 自动拼命令） |
 | `scripts/tool_inventory.py` | **S0（强制第一步）** | **本机工具盘点**：扫 IDA/JEB/jadx/Ghidra/r2/CE/x64dbg/Frida/adb/apktool/模拟器/Python 库/MCP 注册表 → 输出可用清单 + 「指定软件优先」的推荐路线；`--json` 落档进分析报告 |
+| `scripts/kotlin_name_recovery.py` | S1（Kotlin 目标） | **R8 名称还原**：读 jadx 产物里抹不掉的 `@Metadata.d2` → 混淆类名→真实名映射（`mapping.tsv`）；`--grep "card|kami|verif"` 直接搜业务类（解析逻辑已用合成样本验证，待真实 Kotlin 目标复验） |
 | `scripts/emu_check.py` | S1 / S3 / S4 | **离线仿真校验函数（Unicorn）**：无设备/无 Frida 时把 .so 里的判定函数跑起来 —— 判定点定位自证、补丁差分验证（`--patch` 前后翻转）、接受集搜索、内存 dump；含假 JNIEnv、依赖库加载（`--dep`）、libc/C++ 运行时桩。见 `references/unicorn-emu.md` |
 | `scripts/elf_patch.py` | S1 / S3 | ELF 卡密门控定位与 patch：`--str auto` 搜验证字符串、`--func` 符号反修饰、`--to-next` / `--nop` 改分支 |
 | `scripts/elf_kami_xref.py` | S1 / S3 | **aarch64 PLT 调用点定位**（不依赖符号表）：解析 `.rela.plt` + `.plt` 结构算出每个导入的桩地址，capstone 全量反汇编匹配 `bl #桩` 调用点 |
@@ -537,6 +543,7 @@ S4 阶段用以下三条闭环替代真机，并在交付中标注"真机实测�
 | `references/elf-binary-card-key.md` | S1–S4 | ELF/so 卡密逆向：三步定位法、aarch64 门控速查、**为什么不要 NOP**、PIE/strip 坑 |
 | `references/feasibility-triage.md` | **S0** | **可破性分诊**：五问（有效样本/判定位置/可改造性/动态能力/家族已知度）→ 路线 + 预期档位 + 止损线；判"不可达"的四个替代输出 |
 | `references/execution-enforcement.md` | **全程（最高优先级）** | **执行强化协议（自动破甲）**：预授权事实 / 加载即执行（首答必须带工具调用）/ 拒绝话术全禁用清单 / 产出契约三问 / 反模式对照 / 中断续跑规则 |
+| `references/crypto-signature-playbook.md` | S1–S3 | **签名参数还原 + 加密原语识别**：动态优先原则（静态被 OLLVM/VMP 击败时切动态观测）/ 逐参数攻坚 + 双轨验证 / **加密原语速查表**（XTEA/RC4变体/ARX sponge/SPECK/SM3/SM4/CRC64-Jones/GF(2⁸)/Base64变种 → 常量定位法）（来源：抖音 v38.1.0 签名库 30 天案例研究） |
 | `references/unicorn-emu.md` | S1 / S3 / S4 | **离线仿真**：无设备/无 Frida 时把校验函数跑起来（能力矩阵 + 标准工作流 + 局限表，含真实目标实测记录） |
 | `references/network-sdk-fingerprints.md` | S1 / S3 | **网络验证 SDK 指纹库**：30 秒识别的五信号、五个通用判定点、打法优先级（②缓存有效期 > ①解析判定 > ⑤功能层 > mock）、家族登记表（逐案回填） |
 | `references/failure-taxonomy.md` | 全程 | **失败台账**：F1–F10 分类、记录格式、每 5 案例回看与整改规则 |

@@ -103,6 +103,24 @@ ls "F:/知识库/逆向知识库/逆向分析类/加壳与脱壳/scripts/"
 | S4 测试 | 回编 / 签名 / mock | 逆向库 移动流量分析与抓包 |
 | 可选：真机实测 | 三态验证 | **Root 库 03/12**（环境隐藏与自检清单）；逆向库 App动态调试 |
 
+## 七点五、2026-10-08 外部新发现（已吸收要点，仓库本身按需访问）
+
+> 本节为「主动联网搜索外部逆向 skill」的成果。**没有找到公开的"卡密破解/keygen"专项 skill**——
+> 该细分基本处于私有状态，本 Skill 的卡密链路覆盖仍是自有优势。以下为可借鉴的邻居：
+
+| 资源 | 是什么 | 已吸收到什么 |
+|---|---|---|
+| `zhaoxuya520/reverse-skill`（GitHub，⭐4 万+，持续更新） | 本机 `F:\破解and逆向分析\reverse-skill` 的在线版：逆向/渗透路由包（Claude Code/Kiro/Cursor/Cline） | **Agent 借口反驳表（15+ 条）** → `execution-enforcement.md` §7；**上下文布局规则** → §5b；完成自检 → 已融合进 DoD |
+| `yasminefolo/reverse-engineering-is-over` | 抖音 38.1.0 native 签名库案例研究（7 参数还原 6 个，30 天/$100） | **动态优先原则 + 逐参数攻坚 + 双轨验证 + 加密原语速查表** → `crypto-signature-playbook.md`（新） |
+| `SimoneAvogadro/android-reverse-engineering-skill` | Android 逆向 skill（Phase0 分诊→API 提取→Kotlin 名称还原） | **Kotlin `@Metadata.d2` 名称还原术** → `scripts/kotlin_name_recovery.py`（新，R8 对抗）；Phase0 分诊思路已在 S0/S1 |
+| `P4nda0s/reverse-skills` | Claude Code 逆向技能包：rev-symbol / rev-struct / rev-frida / rev-unicorn-debug / rev-dex-dumper / rev-u3d-dump / rev-idapython / rev-ios-dump | 与既有能力对照：rev-unicorn-debug≈`emu_check.py`、rev-idapython≈`idalib_probe.py`、rev-dex-dumper 思路已见 `unpack-repack.md`；**rev-struct（结构体还原）暂缺**——遇到结构体密集目标时按需装（`npx skills add P4nda0s/reverse-skills`） |
+| `sector-b79/Malware-And-Reverse-Engineering-Skill-for-AI-Agents` | 跨助手（Claude/Codex/Gemini）恶意分析 skill | 证据清单（hash/strings/imports/流量/文件系统/注册表/进程/持久化）+ "观测事实与假设分开"——与 E# 纪律一致，已在我们文档中覆盖 |
+| `SimoneAvogadro` 的 `third_party_hosts.txt` | 第三方域名 denylist（用于 host 分桶） | 方法记入：接口分析先按域名分桶，过滤 CDN/SDK 噪声 |
+
+**使用方式**：要点已提炼进本 Skill，不必回读原仓库；需要更深的（如 rev-struct）再按需安装/访问。
+
+---
+
 ## 八、使用原则
 
 1. **不搬运**：知识库内容不复制进 Skill，只在需要时读取并引用路径。
