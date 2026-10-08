@@ -179,7 +179,10 @@ def check_apk(path):
         add("WARN", "签名块检查失败：%s" % e)
 
     # 对齐检查：未对齐的 STORED 条目会被 Android 判 INSTALL_FAILED_INVALID_APK(-124)
+    # 同时检查中央目录偏移有效性：偏移失效 = zip 被写坏（旧版 zipalign4.py 的已知故障），
+    # 必须报 FAIL 而不是跳过——损坏包同样装不上。
     mis = []
+    bad = []
     try:
         with open(path, "rb") as f:
             for info in zf.infolist():
@@ -188,6 +191,7 @@ def check_apk(path):
                 f.seek(info.header_offset)
                 head = f.read(30)
                 if len(head) < 30 or head[:4] != b"PK\x03\x04":
+                    bad.append("%s @header_offset=%d" % (info.filename, info.header_offset))
                     continue
                 n_len, e_len = struct.unpack_from("<HH", head, 26)
                 doff = info.header_offset + 30 + n_len + e_len
@@ -195,12 +199,17 @@ def check_apk(path):
                     mis.append("%s @%d" % (info.filename, doff))
     except Exception as e:
         add("WARN", "对齐检查失败：%s" % e)
+    if bad:
+        add("FAIL", "%d 个条目的中央目录偏移失效（local header 不是 PK\\x03\\x04）→ zip 已损坏" % len(bad),
+            "不要用旧版 zipalign4.py（已修复，改用新版或官方 zipalign.exe）重新对齐")
+        for b in bad[:5]:
+            print("      - %s" % b)
     if mis:
         add("FAIL", "%d 个 STORED 条目未 4 字节对齐 → 会被判 -124 装不上" % len(mis),
             "python scripts/zipalign4.py %s aligned.apk" % path)
         for m in mis[:5]:
             print("      - %s" % m)
-    else:
+    elif not bad:
         add("PASS", "STORED 条目全部 4 字节对齐")
 
 

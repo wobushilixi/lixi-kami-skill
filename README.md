@@ -10,8 +10,13 @@
 
 | 特性 | 说明 |
 |---|---|
+| **S0 可破性分诊** | 动手前 10 分钟五问（有效样本 / 判定位置 / 可改造性 / 动态能力 / 家族已知度）→ 定路线 + 预期档位 + 止损线；判"不可达"即刻转替代输出，不在注定失败的目标上磨 |
 | **四阶段强制流程** | `S1 分析 → S2 方案 → S3 逆向 → S4 测试`，上一阶段未达出口标准不进下一阶段 |
-| **真机实测可选** | 有设备就跑三态验证；没有则用 S4 三条闭环收口（补丁字节复核 + 产物自检 + 逻辑自证），**如实标注未验证** |
+| **一键 S4 流水线** | `s4_pipeline.py`：回编 → 官方对齐 → v1+v2+v3 签名 → 三重验证，顺序固化；中文路径自动转 ASCII；实测真实 95MB 解包目录 6/6 步通过 |
+| **离线仿真兜底（无设备/无 Frida）** | `emu_check.py`（Unicorn）：把 .so 校验函数在 PC 上执行 —— 判定点自证、**补丁差分验证**（打补丁前后返回值翻转）、接受集搜索；含假 JNIEnv 与依赖库加载 |
+| **网络验证 SDK 指纹库** | 天御/易游/飘零/飞扬/至简/索玛等家族识别 + 五个通用判定点 + 打法优先级（缓存有效期 > 解析判定 > 功能层 > mock） |
+| **失败台账** | F1–F10 分类记录 + 每 5 案例回看整改：成功率靠"知道失败集中在哪"提高，不靠更努力 |
+| **真机实测可选** | 有设备就跑三态验证；没有则用 S4 收口（补丁字节复核 + 产物自检 + 逻辑自证 + 行为级差分），**如实标注未验证** |
 | **禁止赌博式尝试** | 任何操作必须带 `E# 假设 + 依据 + 验证方式`；连续 2 次无证据支撑的失败强制停止 |
 | **禁止无依据爆破** | 字典爆破默认关闭，仅「本地离线 + 明确要求 + 有成功率依据」三条同时满足才允许 |
 | **交付双审** | Standards（产物合规）+ Spec（是否真解决用户的问题），两维都过才算交付 |
@@ -21,14 +26,14 @@
 ## 工作流
 
 ```
-S1 分析 ──► S2 方案 ──► S3 逆向 ──► S4 测试 ──► (可选) 真机实测
-  │            │           │           │
-判壳与对抗层   ≥2候选      补丁落盘    对齐/签名/自检
-A/B/C/D 分类   +推荐+风险   .bak 备份   补丁字节复核
-E# 假设台账    +回退路径                逻辑自证
+S0 分诊 ──► S1 分析 ──► S2 方案 ──► S3 逆向 ──► S4 测试 ──► (可选) 真机实测
+  │            │            │           │           │
+五问定路线   判壳与对抗层   ≥2候选      补丁落盘    一键流水线
+预期档位     A/B/C/D 分类   +推荐+风险   .bak 备份   对齐/签名/三重验证
+止损线       E# 假设台账    +回退路径                补丁差分（emu_check）
 ```
 
-架构分类决定策略：**A** 纯本地算法 → 算法还原/keygen ｜ **B** 本地+服务端 → 本地 patch + 响应替换 ｜ **C** 服务端主导 → mock / 改客户端判定 ｜ **D** 试用计数 → 时间冻结 / 计数重置
+架构分类决定策略：**A** 纯本地算法 → 算法还原/keygen（可离线仿真）｜ **B** 本地+服务端 → 本地 patch + 响应替换 ｜ **C** 服务端主导 → mock / 改客户端判定 ｜ **D** 试用计数 → 时间冻结 / 计数重置
 
 ## 目录结构
 
@@ -36,17 +41,25 @@ E# 假设台账    +回退路径                逻辑自证
 kami-bypass/
 ├── SKILL.md                      # 主流程：触发词、四阶段、反赌博与交付门槛
 ├── LICENSE                       # MIT
-├── scripts/                      # 全部离线可用，纯标准库实现
+├── scripts/                      # 全部离线可用，纯标准库实现（emu_check 另需 unicorn+capstone）
 │   ├── packer_detect.py          # 壳 / 混淆 / 反调试 / 签名校验 / 机器码 / 环境检测
 │   ├── kami_scan.py              # APK·DEX·EXE·SO 的卡密特征扫描
 │   ├── web_kami_scan.py          # 网页 / JS / HAR 的卡密与验证接口扫描
 │   ├── elf_kami_gate.py          # ELF 门控定位（字符串 → xref → 分支）
+│   ├── elf_kami_xref.py          # aarch64 PLT 调用点定位（不依赖符号表）
 │   ├── elf_patch.py              # aarch64 分支改写（--to-next / --nop）
+│   ├── sh_unpeel.py              # 加密 sh 载荷剥壳（RX/ZF/龙茶/铭白/EON/Super 家族）
 │   ├── smali_kami_patch.py       # smali 判定点 patch（默认 replace 模式）
-│   ├── verify_patch.py           # 产物自检：死代码 / 寄存器越界 / 对齐 / 签名
-│   ├── zipalign4.py              # 纯 Python 对齐（不依赖 build-tools）
+│   ├── emu_check.py              # 【新】Unicorn 离线仿真：跑校验函数 / 补丁差分 / 假 JNIEnv
+│   ├── s4_pipeline.py            # 【新】一键：回编→对齐→签名(v1+v2+v3)→三重验证
+│   ├── verify_patch.py           # 产物自检：死代码 / 寄存器越界 / 对齐 / 结构 / 签名
+│   ├── zipalign4.py              # 纯 Python 对齐（v2：带结构自检 + CRC 可读性检查）
 │   └── xposed_kami_module.java   # 可选：Xposed / LSPosed Hook 模板
 └── references/                   # 按需加载的深入文档
+    ├── feasibility-triage.md     # 【新】S0 可破性分诊：五问 → 路线 / 档位 / 止损线
+    ├── unicorn-emu.md            # 【新】离线仿真：能力矩阵 / 工作流 / 局限（含实测记录）
+    ├── network-sdk-fingerprints.md  # 【新】网络验证 SDK 指纹库与五个通用判定点
+    ├── failure-taxonomy.md       # 【新】F1–F10 失败台账与整改规则
     ├── packer-analysis.md        # 壳识别、已知误报表、方案报告模板
     ├── anti-defense.md           # 签名校验 / 反调试 / 完整性 / 机器码
     ├── android-card-key.md       # APK 卡密链路（Java / so / 加固壳）
@@ -105,10 +118,19 @@ python scripts/smali_kami_patch.py work/smali --apply --ret true
 python scripts/elf_patch.py payload.elf --str auto
 python scripts/elf_patch.py payload.elf --addr 0x0a8db54 --to-next --out patched.elf
 
-# S4：产物自检 + 对齐（顺序不可颠倒：回编 → 对齐 → 签名）
+# S4：一键流水线（首选，顺序固化：回编 → 对齐 → 签名 → 验证）
+python scripts/s4_pipeline.py all work/decompiled -o final.apk
+python scripts/s4_pipeline.py check final.apk
+
+# S4：手工分步（需要精细控制时）
 python scripts/verify_patch.py rebuilt.apk
 python scripts/zipalign4.py rebuilt.apk aligned.apk
 python scripts/zipalign4.py check aligned.apk
+
+# S1/S3/S4：离线仿真（无设备/无 Frida 时的行为级验证）
+python scripts/emu_check.py --elf libfoo.so --list
+python scripts/emu_check.py --elf libfoo.so --sym check_key --arg "TEST-KEY" --expect 0
+python scripts/emu_check.py --elf libfoo.so --sym check_key --arg "BAD" --expect 1 --patch 0x1A2C4:1f2003d5
 ```
 
 ## 配套资料（可选）
