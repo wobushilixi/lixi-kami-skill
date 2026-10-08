@@ -151,6 +151,7 @@ S2 方案：推荐 <方案名>
 | 身份 / 凭据 / JWT / OAuth（客户端侧校验环节） | `bypass-playbook.md`（伪造响应/票据分支）+ `js-signature-reverse.md`（签名/token 算法还原） |
 | 支付 / 回调 / 业务逻辑（客户端校验 + 回调判定） | `bypass-playbook.md` 攻击面五层模型 + C 类架构 mock/响应解析 patch |
 | CTF / 逆向与二进制（crackme / 校验算法还原） | `binary-quickwins.md`、`elf-binary-card-key.md`、`elf_patch.py` 系列 |
+| 加密 sh 载荷 / 脚本分发（RX/ZF/龙茶/Super 等加密壳） | `sh-encrypt-reverse.md`、`scripts/sh_unpeel.py` |
 | 内存 / 运行时（dump 解密串、运行时状态提取） | `binary-quickwins.md` §1.3、`unpack-repack.md`（内存 dump dex）、`packer-analysis.md` |
 | 恶意样本加固 / 检测（壳与对抗层） | `packer-analysis.md`、`anti-defense.md`、`packer_detect.py` |
 | 工具使用与环境搭建 | `beginner-kit.md` + 本 SKILL.md 资源路径表 |
@@ -189,6 +190,7 @@ S2 方案：推荐 <方案名>
 **这是最常见的双层陷阱**：APK 的 Java 层往往只负责「写卡密文件 → root 执行 `assets/` 下某个文件 → grep 它的输出」。**卡密真判定在那个二进制里**。看到以下任一现象就必须做这一步：
 
 - `assets/` 下有几百 KB ~ 几十 MB 的 `.sh` / `.bin` / `.dat` / 无扩展名 / 名为 `payload`、`loader`、`core` 的文件
+- **`.sh` 文件头部不是 `#!/` 而是大段 hex / base64 / emoji 乱码 = 加密 sh（RX/ZF/龙茶/铭白/EON/Super/春秋 家族）→ 先跑 `scripts/sh_unpeel.py` 剥壳（见 `references/sh-encrypt-reverse.md`），ELF 桩类走运行时截获**
 - Java 层出现 `RootShell.exec(...)` 且命令里有 `chmod 700` + 管道喂输入 + `grep -E`
 - `ensurePayload` / `loaderFile` / `isLoaderCacheForVariant` 这类方法名
 - 用户说「会下载一个二进制文件，它会重新验证卡密」
@@ -417,6 +419,7 @@ S4 阶段用以下三条闭环替代真机，并在交付中标注"真机实测�
 | `scripts/packer_detect.py` | S1 | APK / PE / ELF：加壳、混淆、反调试、签名校验、机器码检测 |
 | `scripts/kami_scan.py` | S1 | APK / DEX / EXE / SO：卡密特征扫描 |
 | `scripts/web_kami_scan.py` | S1 | **Web**：网页 / JS / HAR 的卡密与验证接口特征扫描 |
+| `scripts/sh_unpeel.py` | S1 / S3 | **加密 sh 剥壳器**：自动逐层剥 hex/b64/gzip/bzip2/ROT13/tar/16字节XOR/自截取（RX/ZF/龙茶/铭白/EON/Super 家族 4/4 回环实测通过）；`--show-lines` 读 loader 关键行 |
 | `scripts/smali_kami_patch.py` | S3 | smali 判定点定位与补丁生成（默认 dry-run；`--apply` 默认 `replace` 模式，整体替换方法体，不留死代码） |
 | `scripts/verify_patch.py` | S4 | **产物自检**：smali 语法与寄存器越界 / 死代码；APK 的 dex、manifest、v1+v2 签名 |
 | `scripts/zipalign4.py` | S4（强制） | 纯 Python 对齐（不依赖 build-tools）：`check` 检查、`in out` 对齐；未对齐 = 装不上（-124） |
@@ -460,6 +463,7 @@ S4 阶段用以下三条闭环替代真机，并在交付中标注"真机实测�
 | `references/external-knowledge-index.md` | 全程 | 外部知识库索引（F:\知识库 两个库 + `F:\破解and逆向分析\reverse-skill`，按需深挖） |
 | `references/web-card-key.md` | S1–S4 | **Web 卡密验证逆向全流程** |
 | `references/js-signature-reverse.md` | S1–S4 | **JS 签名链五阶段逆向**：initiator 回溯、XHR 断点、固定/变化字段采样、Node 补环境复现、常见签名方案速查、WASM 黑盒调用（接口带 sign / 加密参数时必读） |
+| `references/sh-encrypt-reverse.md` | S1 / S3 | **加密 sh 脚本逆向**：RX/ZF/龙茶/铭白/EON/Super/春秋 七家族识别与破法、静态剥壳与运行时截获双路线、明文落地 tmp 位置速记 |
 | `references/binary-quickwins.md` | S1 / S3 | **二进制 Quick Wins 漏斗 + 高级模式**：诱饵目标识别、比较方向、内存 dump 偷答案、angr 符号执行、算法常量速查、Flutter/Go/Rust/WASM/Tauri 等格式路线、radare2 patch 速查、新旧版本 diff |
 | `references/android-card-key.md` | S1–S4 | APK 卡密链路（Java / so / 加固壳） |
 | `references/apk-embedded-binary-cardkey.md` | **S1–S4** | **卡密藏在 `assets/` 伪装 ELF（`.sh`/`.bin`）里**：识别文件头、符号表静态定位判定点、aarch64 跳转改写、APK 侧配套改法、apksigner 正确用法、Ghidra headless 坑、端到端复现 |
