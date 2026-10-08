@@ -121,6 +121,20 @@ ls "F:/知识库/逆向知识库/逆向分析类/加壳与脱壳/scripts/"
 
 ---
 
+## 七点六、2026-10-08 第二轮外部搜索（Web 方向专项）
+
+| 资源 | 是什么 | 已吸收到什么 |
+|---|---|---|
+| `Fausto-404/js-reverse-automation--skill`（590⭐） | JSRPC+Flask+autoDecoder 前端 JS 逆向自动化 | **JSRPC 方案** → `scripts/jsrpc_server.py` + `templates/jsrpc_client.js` + `jsrpc-browser-oracle.md`（本 Skill 已实测往返）；8 维候选评分/证据图概念记录 |
+| `715494637/reverse-skill`（366⭐） | Web JS 逆向（请求链/运行时/AST/JSVMP/worker/WASM/webpack） | **写边界证明 + 请求链证据模型 + 检查点验证 + reverse-records 交接文件** → `jsrpc-browser-oracle.md` §二~五 |
+| `WhiteNightShadow/hello_js_reverse_skill`（1317⭐） | 最全的 JS 逆向 skill（Phase0-5/环境伪装六步法/经验库/cases 快查表） | **任务级检查（preflight）+ 经验库/案例快查表思路** → `jsrpc-browser-oracle.md` §六 + `failure-taxonomy.md` 配套；环境伪装六步法/JVM 沙箱等按其仓库按需参考 |
+| `DaoYiSec/SecSkills`（1125⭐） | 渗透/审计/CTF/逆向 skill+MCP 合集 | 作为资源索引备查 |
+| `dslsdzc/rev-skills`（127⭐） | 122 个逆向 AI 技能（含 firmware/protocol/unpacking） | 备查：固件/协议逆向往深做时按需访问 |
+| `index-login/MobileRE-Skill`（133⭐） | 移动端 RE：Frida hook/脱壳/反检测/DEX dump/Ghidra MCP | 与既有 android 系文档对照，Frida 部分待部署后参考 |
+| 结论 | **Web 方向是公开 skill 竞争最激烈的领域**（1317⭐/590⭐/366⭐ 三个高分仓库）；二进制卡密方向依旧空白 | 本 Skill 已把三家最高价值技法全部落地为自有工具与 playbook |
+
+---
+
 ## 八、使用原则
 
 1. **不搬运**：知识库内容不复制进 Skill，只在需要时读取并引用路径。

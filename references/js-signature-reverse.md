@@ -1,5 +1,7 @@
 # JS 前端签名链逆向（Web 卡密 / 接口验证专用）
 
+> 配套升级：**写边界证明**（找「谁写的」而非「叫什么名」）、**请求链证据**、**检查点验证**、**JSRPC 保底路线**、跨会话交接文件 —— 见 `jsrpc-browser-oracle.md`。
+
 > 来源：融合 haikow/claude-reverse-skills 的 mcp-js-reverse-playbook 五阶段方法 + 实战经验。
 > 适用：接口签名（sign/nonce/timestamp）、加密参数、风控字段、前端校验绕过。
 > 原则：**Observe-first（先观察）→ Capture（最小采样）→ Rebuild（本地复现）→ Patch（按报错补环境）→ DeepDive（去混淆，仅必要时）**
