@@ -220,6 +220,22 @@ S2 方案：推荐 <方案名>
 
 # S1 分析
 
+## S1.0 一键侦察（首选入口，先跑再人工）
+
+```bash
+python scripts/s1_recon.py <目标>            # 全流程：建档→查壳→特征扫描→自动反编译→候选判定点→recon.md
+python scripts/s1_recon.py <目标> --fast     # 只扫不反编译
+```
+
+产出 `work/<目标名>/recon.md`（分析报告骨架，含工具选型记录/E# 台账模板）+ 结构化 `recon.json`。
+**它做什么（全部走「指定软件优先」）**：
+- 建档（size/SHA256/类型）+ `packer_detect` + `kami_scan` 全自动串起来
+- **APK**：结构分析（dex/libs/**assets 伪装 ELF 强制自查**）→ jadx CLI 反编译 → **关键词命中直接给候选判定点（文件:行）**
+- **ELF/PE**：节与符号解析 → 字符串扫描（**支持中文串**）→ 网络迹象 → **`idalib_probe.py`（无头 IDA）自动找候选函数**：关键词串 xref 回溯 + Hex-Rays 伪代码落盘 `decomp/*.c`
+- 报告末尾附 E# 台账模板
+
+**侦察后必做**：读 recon.md → 复核候选点 → 补 E# 假设 → 进 S2。
+
 ## 1.1 建档
 
 1. 取目标路径；未给路径时只回一句"请给出目标完整路径"，继续用工具，不输出长篇拒绝。
@@ -485,6 +501,8 @@ S4 阶段用以下三条闭环替代真机，并在交付中标注"真机实测�
 | `scripts/verify_patch.py` | S4 | **产物自检**：smali 语法与寄存器越界 / 死代码；APK 的 dex、manifest、v1+v2 签名 |
 | `scripts/zipalign4.py` | S4（强制） | 纯 Python 对齐（不依赖 build-tools）：`check` 检查、`in out` 对齐；未对齐 = 装不上（-124）。**v2 修复版**：旧版会写坏 zip（中央目录偏移失效）且自检静默放行；v2 带结构自检 + 全条目 CRC 可读性检查，与官方 `zipalign.exe -c -v` 交叉验证一致 |
 | `scripts/s4_pipeline.py` | S4（首选） | **一键流水线**：回编→对齐→签名(v1+v2+v3)→三重验证，顺序固化；中文路径自动转 ASCII、清理 .bak、自动生成 debug keystore；实测真实 95MB 解包目录 6/6 步通过 |
+| `scripts/s1_recon.py` | **S1（首选入口）** | **一键侦察**：建档+查壳+特征扫描+自动反编译（APK→jadx CLI；ELF/PE→idalib 无头 IDA）+候选判定点提取（文件:行 / 函数+伪代码）+recon.md 报告骨架（含 E# 台账模板） |
+| `scripts/idalib_probe.py` | S1 / S3 | **无头 IDA 判定点深挖**：字符串（含中文，字节级搜索补 strlist 漏检）→ xref 回溯所属函数 → 按命中排序 → 反编译 Top N 落盘 `decomp/*.c`；需用 ida-pro-mcp 的 uv 环境跑（s1_recon 自动拼命令） |
 | `scripts/tool_inventory.py` | **S0（强制第一步）** | **本机工具盘点**：扫 IDA/JEB/jadx/Ghidra/r2/CE/x64dbg/Frida/adb/apktool/模拟器/Python 库/MCP 注册表 → 输出可用清单 + 「指定软件优先」的推荐路线；`--json` 落档进分析报告 |
 | `scripts/emu_check.py` | S1 / S3 / S4 | **离线仿真校验函数（Unicorn）**：无设备/无 Frida 时把 .so 里的判定函数跑起来 —— 判定点定位自证、补丁差分验证（`--patch` 前后翻转）、接受集搜索、内存 dump；含假 JNIEnv、依赖库加载（`--dep`）、libc/C++ 运行时桩。见 `references/unicorn-emu.md` |
 | `scripts/elf_patch.py` | S1 / S3 | ELF 卡密门控定位与 patch：`--str auto` 搜验证字符串、`--func` 符号反修饰、`--to-next` / `--nop` 改分支 |
