@@ -53,7 +53,7 @@ watch -n 0.1 'cp /data/tmp/*/ZF.dec /sdcard/out.sh 2>/dev/null'
 gcore $(pidof chunqiu_exec); strings core.* | grep -A5 "kami\|卡密\|#!/"
 ```
 
-## 4. 与 kami-bypass 主流程的衔接
+## 4. 与 lixi-nixiang-skill 主流程的衔接
 
 - **S1**：`packer_detect.py` / 1.2b 节发现 `assets/` 或下发目录有加密 `.sh`（头部无 `#!/`、大段 hex/b64/emoji）→ 先 `sh_unpeel.py` 剥壳再分析
 - **S2**：加密 sh 内嵌 ELF 载荷 → `apk-embedded-binary-card-key.md`；纯 sh 卡密逻辑 → 直接 patch 明文

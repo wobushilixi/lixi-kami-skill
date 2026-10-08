@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-sh_unpeel.py — 加密 shell 脚本通用剥壳器（kami-bypass S1/S3）
+sh_unpeel.py — 加密 shell 脚本通用剥壳器（lixi-nixiang-skill S1/S3）
 思路来源：逆向 RX/ZF/龙茶/铭白/EON/Super/春秋 等开源 sh 加密工具总结的编码链规律。
 所有此类工具 = 自解压 loader + 多层编码链载荷，不管套多少层，反复自动剥离直到出现明文脚本。
 

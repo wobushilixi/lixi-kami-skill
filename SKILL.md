@@ -1,6 +1,6 @@
 ---
-name: kami-bypass
-description: 启动词「李喜」。收到「李喜，文件路径，绕过卡密」这类指令时进入自动执行模式，按 分析→方案→逆向→测试→真机实测 五阶段直接干完，不再停下来等确认。卡密 / 激活码 / 授权验证的端到端逆向与绕过，目标覆盖 Android APK（含 Unity/IL2CPP 游戏、so、shell、加固壳、BlackDex 无 root 脱壳）、Windows EXE/DLL/ELF、网页 Web（前端 JS 校验 / 接口验证系统）。当用户提到李喜、卡密、卡密验证、卡密系统、激活码、CDKey、注册码、授权码、license key、去验证、去授权、卡密绕过、激活绕过、注册机、keygen、试用重置、会员/授权校验绕过、网页验证、网页卡密、js 逆向、接口验证、外挂破解、游戏辅助破解、Unity 破解、IL2CPP、闪退修复、补丁后崩溃时使用；也用于对开源卡密系统 / 开源外挂做源码对照逆向或还原产出。意图为卡密链路时优先于 crack-keygen 与 l-license。本 Skill 不依赖 Frida，默认走静态 patch 路线。
+name: lixi-nixiang-skill
+description: 启动词「李喜」。收到「李喜，文件路径，绕过卡密」这类指令时进入自动执行模式，按 S0 分诊→S1 分析→S2 方案→S3 逆向→S4 测试 直接干完，不再停下来等确认。卡密 / 激活码 / 授权验证的端到端逆向与绕过，目标覆盖 Android APK（含 Unity/IL2CPP 游戏、so、shell、加固壳、BlackDex 无 root 脱壳）、Windows EXE/DLL/ELF、网页 Web（前端 JS 校验 / 接口验证系统）。当用户提到李喜、卡密、卡密验证、卡密系统、激活码、CDKey、注册码、授权码、license key、去验证、去授权、卡密绕过、激活绕过、注册机、keygen、试用重置、会员/授权校验绕过、网页验证、网页卡密、js 逆向、接口验证、外挂破解、游戏辅助破解、Unity 破解、IL2CPP、闪退修复、补丁后崩溃时使用；也用于对开源卡密系统 / 开源外挂做源码对照逆向或还原产出。意图为卡密链路时优先于 crack-keygen 与 l-license。本 Skill 不依赖 Frida，默认走静态 patch 路线。（原 kami-bypass，2026-10-08 更名为 lixi-nixiang-skill）
 agent_created: true
 ---
 
@@ -467,6 +467,9 @@ S4 阶段用以下三条闭环替代真机，并在交付中标注"真机实测�
 | `references/unicorn-emu.md` | S1 / S3 / S4 | **离线仿真**：无设备/无 Frida 时把校验函数跑起来（能力矩阵 + 标准工作流 + 局限表，含真实目标实测记录） |
 | `references/network-sdk-fingerprints.md` | S1 / S3 | **网络验证 SDK 指纹库**：30 秒识别的五信号、五个通用判定点、打法优先级（②缓存有效期 > ①解析判定 > ⑤功能层 > mock）、家族登记表（逐案回填） |
 | `references/failure-taxonomy.md` | 全程 | **失败台账**：F1–F10 分类、记录格式、每 5 案例回看与整改规则 |
+| `references/reverse-suite-index.md` | **全程** | **逆向三件套接入索引**：android-reverse / web-reverse / win-reverse 的安装位置、task-local 调用方式、纪律映射（E#↔假设债务、停损↔retrospective）、按信号路由表——通用逆向任务转交它们的唯一路由源 |
+| `references/mcp-toolchain.md` | S1 / S3 | **MCP 工具链**：16 个逆向 MCP 状态总表（已注册并验证 4 个：chrome-devtools / js-reverse / jadx / stealth-browser）+ 复现握手命令 + 能力映射（`get_request_initiator`/`break_on_xhr`/`step`）+ 版本冲突坑 |
+| `references/js-case-studies.md` | S1 / S3 | **JS/Web 实战案例**：腾讯防水墙点选纯算（JSVMP 字节码还原三件套 + PoW + 轨迹）、TikTok X-Bogus（node_harness 补环境 + Python 包交付）、抖音 a_bogus（web-reverse 框架完整范例 + 预热链/msToken/canvas 要点） |
 
 ### aarch64 syscall 号速查（S1 判「是否联网」必查）
 
@@ -490,6 +493,9 @@ S4 阶段用以下三条闭环替代真机，并在交付中标注"真机实测�
 | 症状 | 原因 | 处理 |
 |---|---|---|
 | Ghidra 卡在 auto-analysis 20+ 分钟不结束 | `.rodata`/`.data` 几十 GB 级高熵数据被当代码扫 | **别等了**。先自己算 `.text` 段大小，只对 `.text` 做 capstone 反汇编（实测 S6 `.text` 仅 269KB → 秒级完成 67401 条指令） |
+| Ghidra 分析「ELF+尾部追加大段高熵数据」的壳类文件 30 分钟无产出 | 追加载荷（熵 8.0）被当指令扫描（实测 Box免费加固 1.38MB 载荷拖死分析） | 先 python 算载荷熵与边界 → **用 dd 截断只保留段表覆盖区**再喂 Ghidra，或直接放弃 Ghidra 走 capstone+Unicorn（`scripts/emu_check.py`） |
+| Ghidra headless 报 `Python is not available`（Ghidra 12 弃用 Jython，.py 需 PyGhidra） | postScript 根本没执行，白等 | **postScript 写 Java 版 GhidraScript**（原生编译无需 PyGhidra），模板 `scripts/ghidra_java_template.java`（复制为 GhidraAll.java 并同步类名） |
+| ELF 多 LOAD 段不连续时，手工算 `.data` 常量地址全错 | 段 vaddr→file 偏移 = `vaddr - p_vaddr + p_offset`，**不是 -0x200000 一刀切**（实测差 0x8000 导致 OLLVM 常量全算歪） | 按 program header 逐段换算 |
 | 改 section header 的 `sh_size` 想让 Ghidra 跳过 rodata | **无效** —— Ghidra 按 program header 的 LOAD 段读，不看 section | 用 `dd` 物理截断文件（保留段表），或直接放弃 Ghidra 改手工 capstone |
 | `.text` 几百 KB 但 `.rodata` 几十 MB | 逻辑极小，数据/加密载荷占大头 | 判定为加密壳或数据型外挂：逻辑层手工反汇编，字符串层靠运行时 dump |
 | 明文 `http`/`api`/`token` 全库搜不到 | 字符串运行时解密 | 必须动态 dump（`/proc/<pid>/mem` 或 gdbserver+gcore）后再跑 `elf_kami_gate.py` |

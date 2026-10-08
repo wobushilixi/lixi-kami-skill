@@ -1,4 +1,4 @@
-# kami-bypass
+# lixi-nixiang-skill
 
 > 授权测试环境下的**卡密 / 激活码 / 授权验证**逆向与绕过 Skill。把「查壳 → 出方案 → 实施 → 验证」做成有证据、可复现、不靠运气的流程。
 
@@ -38,7 +38,7 @@ S0 分诊 ──► S1 分析 ──► S2 方案 ──► S3 逆向 ──► 
 ## 目录结构
 
 ```
-kami-bypass/
+lixi-nixiang-skill/
 ├── SKILL.md                      # 主流程：触发词、四阶段、反赌博与交付门槛
 ├── LICENSE                       # MIT
 ├── scripts/                      # 全部离线可用，纯标准库实现（emu_check 另需 unicorn+capstone）
@@ -81,8 +81,8 @@ kami-bypass/
 
 | 平台 | 路径 |
 |---|---|
-| WorkBuddy | `~/.workbuddy/skills/kami-bypass/` |
-| ZCode | `~/.zcode/skills/kami-bypass/` |
+| WorkBuddy | `~/.workbuddy/skills/lixi-nixiang-skill/` |
+| ZCode | `~/.zcode/skills/lixi-nixiang-skill/` |
 
 ## 使用
 

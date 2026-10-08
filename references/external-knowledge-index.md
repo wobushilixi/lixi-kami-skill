@@ -71,7 +71,7 @@ ls "F:/知识库/逆向知识库/逆向分析类/加壳与脱壳/scripts/"
 
 用法：先读 `skills/MASTER-ROUTING.md` 找对应专项 skill → 再读该专项的 `SKILL.md`；需要工具清单时跑 `skills/scripts/refresh-tool-index.ps1`（Windows）或 `.sh`（Linux/Kali）生成本机 `tool-index.md`。
 
-**与本 Skill 的分工**：卡密/授权验证链路走 kami-bypass（S1–S4）；通用逆向与渗透专项、需要特定工具链时走 reverse-skill 的对应专项 skill。
+**与本 Skill 的分工**：卡密/授权验证链路走 lixi-nixiang-skill（S1–S4）；通用逆向与渗透专项、需要特定工具链时走 reverse-skill 的对应专项 skill。
 
 ## 四、haikow/claude-reverse-skills（GitHub，MIT，已提炼入库）
 
