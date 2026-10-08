@@ -230,10 +230,14 @@ def analyze_js_text(txt, name, top):
 
 def analyze_dir(root, top):
     files = []
+    har_files = []
     for dp, dns, fns in os.walk(root):
         for fn in fns:
-            if fn.lower().endswith((".js", ".mjs", ".html", ".htm", ".json")):
-                files.append(os.path.join(dp, fn))
+            fp = os.path.join(dp, fn)
+            if fn.lower().endswith(".har"):
+                har_files.append(fp)
+            elif fn.lower().endswith((".js", ".mjs", ".html", ".htm", ".json")):
+                files.append(fp)
     js_rows = []
     html_rows = []
     for fp in files:
@@ -263,10 +267,10 @@ def analyze_dir(root, top):
             html_rows.append({"file": rel, "frameworks": fw, "inline_scripts": inline,
                               "external_scripts": scripts[:20], "forms": forms[:10]})
     js_rows.sort(key=lambda r: -r["score"])
-    # 目录里的 har / json 抓包
-    hars = [f for f in files if f.lower().endswith(".har")]
+    # 目录里的 har 抓包（独立收集，见 har_files）
     return {"mode": "DIR", "js": js_rows[:top], "html": html_rows[:10],
-            "hars_found": hars[:5], "total_js": len(js_rows)}
+            "hars_found": [os.path.relpath(h, root) for h in har_files[:5]],
+            "total_js": len(js_rows)}
 
 
 # ---------------- URL ----------------
@@ -360,7 +364,12 @@ def main():
     if args.url:
         res = analyze_url(args.url, args.top)
     elif args.target.lower().endswith(".har"):
-        res = analyze_har(args.target, args.top)
+        try:
+            res = analyze_har(args.target, args.top)
+        except Exception as e:
+            print("[-] HAR 解析失败：%s" % e)
+            print("    确认它是浏览器 Network 面板导出的 .har（JSON 格式）")
+            return 2
     elif os.path.isdir(args.target):
         res = analyze_dir(args.target, args.top)
     else:

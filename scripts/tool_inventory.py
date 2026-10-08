@@ -188,16 +188,6 @@ def check_mcp_registry():
     return names
 
 
-def check_npm_pkg(pkg):
-    """检查 npm 全局/缓存里是否有某包（不联网）。仅查 npx 能否解析（离线时返回 False）。"""
-    try:
-        r = subprocess.run(["npm", "ls", "-g", "--depth=0", pkg], capture_output=True,
-                           text=True, timeout=20)
-        return pkg in (r.stdout or "")
-    except Exception:
-        return False
-
-
 def probe():
     result = {"os": platform.platform(), "python": sys.version.split()[0], "groups": {}}
     groups = result["groups"]

@@ -25,7 +25,7 @@
 | 2 | 打开 F12 页面就卡死/跳转/清屏 | DevTools 检测 | ① **不开 DevTools 窗口**：用 `js-reverse-mcp` 的 CDP 层断点（`break_on_xhr`/`set_breakpoint_on_text`）② 本地副本先 patch 检测函数（`debugger`/`devtools` 重写为空函数）③ 纯 HAR+静态路线 |
 | 3 | HAR 里没有业务请求，只有静态资源 | SPA 懒加载 / 没触发目标动作 | ① **先在页面里实际操作**（输卡密→点激活）再导出 HAR ② Sources → XHR/fetch 断点看 initiator |
 | 4 | 搜 `sign`/`encrypt` 找不到签名函数 | 签名藏在别处 | ① `web_recon.py` 的 JS 排名（评分高者优先）② `get_request_initiator` 从请求回溯调用链 ③ 查 Worker/WASM/iframe（web_recon 会标） |
-| 5 | Node 里跑签名函数报错/结果不对 | **补环境失败**（最高频） | ① `tools/reverse-cases/tiktok-x-bogus/node_harness.js` 模板 ② 钉死随机源（Math.random/Date.now 固定值）③ canvas/webgl/navigator 从真实浏览器 dump 后回填 ④ web-reverse 框架 `env-conformance-playbook.md` |
+| 5 | Node 里跑签名函数报错/结果不对 | **补环境失败**（最高频） | ① **§2.0 Proxy 监控法**（自动列出缺失清单，别靠猜）② `tools/reverse-cases/tiktok-x-bogus/node_harness.js` 模板 ③ 钉死随机源 ④ canvas/webgl/navigator 从真实浏览器 dump 回填 |
 | 6 | 参数是长密文，找不到 key | 加密在库函数里 | ① **hook 库函数拿明文**：`CryptoJS.AES.encrypt` 断点看入参（key/iv/明文直接落手里）② 国密/自研 → `crypto-signature-playbook.md` 原语速查 |
 | 7 | 改了响应没用 / 重放失败 | 响应有签名 / 一次性 nonce | ① **别伪造响应** → 改「客户端解析后的判定分支」② nonce/time 窗 → 本地复现 sign 函数生成新签名 |
 | 8 | 验证接口要登录态 | 登录墙 | ① 让用户提供测试账号 / 已登录的 HAR ② HAR 重放带 Cookie（`session`/`token` 在请求头里） |
@@ -37,6 +37,45 @@
 | 14 | 以上都试了还不稳定 / 算法太贵 | — | **JSRPC 保底**（§2.5）：真实浏览器当签名计算器，先保住产出，再谈纯算 |
 
 ## 2. 三个最高频卡点的展开
+
+### 2.0 补环境：Proxy 监控法（从"猜要补什么"变成"看缺什么"）
+
+> 来源：`zhizhuodemao/ai-reverse-toolkit`（js-reverse-mcp 作者）的 env-patch 技法。
+
+**痛点**：传统补环境是"跑报错 → 补一个 → 再跑"的猜谜循环，大 bundle 能猜一下午。
+**正解**：用 Proxy 把运行上下文包起来，**自动记录缺失/未定义的全局访问**：
+
+```js
+// Node 侧：让 vm 上下文整体成为 Proxy——has 恒真（什么都找得到），get 记录并给桩
+const accessed = new Set();
+const sandbox = new Proxy({}, {
+  has: () => true,                       // 关键：让所有全局访问都"存在"
+  get: (t, k) => {
+    if (k === Symbol.unscopables) return undefined;
+    if (!(k in t)) accessed.add(String(k));   // 记录缺失访问
+    return t[k];
+  },
+  set: (t, k, v) => { t[k] = v; return true; },
+});
+const vm2 = require('vm');
+const ctx = vm2.createContext(Proxy.revocable ? {} : {});   // 或直接用 with(sandbox) 包裹脚本
+// 跑目标签名代码，一次运行后：accessed 里就是"这个脚本要的全部环境"
+```
+
+**流程**：
+1. 空环境跑一次 → 拿 `accessed` 清单（= 环境需求清单，不再靠猜）
+2. 按清单逐项补**真实值**（canvas/navigator/webgl 从真实浏览器 dump，别用假值）
+3. 再跑一次验证（0 访问缺口 + 输出与浏览器真值逐字节一致）
+
+**配合 webpack 模块提取**（大 bundle 里只抠你要的那块）：
+```js
+// 页面里先找模块 id，再直接要：拿到签名模块导出的函数
+const mod = __webpack_require__(12345);          // 已知 id
+__jsrpc.expose('signMod', () => __webpack_require__(12345));   // 用 JSRPC 暴露给本地
+// 离线：抓 runtime + 目标 chunk 两个文件即可，不必整个 4MB bundle
+```
+
+---
 
 ### 2.1 补环境失败（症状 5）——先固定三个源头
 

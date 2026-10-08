@@ -99,8 +99,7 @@ class Relay:
                     async with self._lock:
                         cid = self.next_id
                         self.next_id += 1
-                    fut = asyncio.get_event_loop().create_future()
-                    self.pending[cid] = (fut, ws, msg.get("id"))
+                    self.pending[cid] = (ws, msg.get("id"))
                     bid, bws = next(iter(self.browsers.items()))
                     await bws.send(json.dumps({"type": "call", "id": cid,
                                                "fn": msg.get("fn"), "args": msg.get("args", [])}))
@@ -108,7 +107,7 @@ class Relay:
                     # 浏览器回结果 → 还给对应 ctl
                     entry = self.pending.pop(msg.get("id"), None)
                     if entry:
-                        fut, ctl_ws, ctl_id = entry
+                        ctl_ws, ctl_id = entry
                         await ctl_ws.send(json.dumps({"type": "result", "id": ctl_id,
                                                       "ok": msg.get("ok"),
                                                       "result": msg.get("result"),
@@ -136,7 +135,13 @@ async def cmd_serve(port, verbose=True):
 
 
 async def cmd_call(port, fn, args, timeout):
-    async with ws_connect("ws://127.0.0.1:%d" % port) as ws:
+    try:
+        ws = await ws_connect("ws://127.0.0.1:%d" % port)
+    except Exception as e:
+        print("[-] 连不上中继服务（ws://127.0.0.1:%d）：%s" % (port, e))
+        print("    先启动：python scripts/jsrpc_server.py serve --port %d" % port)
+        return 3
+    async with ws:
         await ws.send(json.dumps({"type": "hello", "role": "ctl"}))
         await ws.recv()  # welcome
         if fn == "__list__":
@@ -179,6 +184,7 @@ def main():
     p4.add_argument("--port", type=int, default=DEFAULT_PORT)
 
     p5 = sub.add_parser("ping", help="探活")
+    p5.add_argument("--port", type=int, default=DEFAULT_PORT)
 
     args = ap.parse_args()
 

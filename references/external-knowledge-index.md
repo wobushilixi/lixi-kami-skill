@@ -36,7 +36,7 @@ find "F:/知识库/Root知识库" -name "*隐藏*"
 
 | 目录 | 对本 Skill 的用途 |
 |---|---|
-| `逆向分析类/加壳与脱壳` | S1 脱壳（每个目录含 `SKILL.md` + `scripts/script.py`） |
+| `逆向分析类/加壳与脱壳` | S1 脱壳（每个目录含 `SKILL.md` 及其自带 `script.py`——该文件属于外部知识库，不在本仓库） |
 | `逆向分析类/混淆还原` | S1 代码混淆（ProGuard / OLLVM / 控制流平坦化）还原 |
 | `逆向分析类/密码算法识别` | S1/S3 识别卡密算法用的哈希与加密（对应 A 类 keygen） |
 | `逆向分析类/运行时Hook与注入` | S3 Hook 方案（本 Skill 默认静态，需要时用） |
@@ -131,6 +131,7 @@ ls "F:/知识库/逆向知识库/逆向分析类/加壳与脱壳/scripts/"
 | `DaoYiSec/SecSkills`（1125⭐） | 渗透/审计/CTF/逆向 skill+MCP 合集 | 作为资源索引备查 |
 | `dslsdzc/rev-skills`（127⭐） | 122 个逆向 AI 技能（含 firmware/protocol/unpacking） | 备查：固件/协议逆向往深做时按需访问 |
 | `index-login/MobileRE-Skill`（133⭐） | 移动端 RE：Frida hook/脱壳/反检测/DEX dump/Ghidra MCP | 与既有 android 系文档对照，Frida 部分待部署后参考 |
+| `zhizhuodemao/ai-reverse-toolkit`（462⭐，js-reverse-mcp 作者） | skills+rules+prompts：find-crypto-entry / env-patch / ast-deobfuscate | **Proxy 监控补环境法 + webpack 模块提取** → `web-reverse-failure-modes.md` §2.0（本 Skill 唯一补环境系统化方法）；"工具给手/Skill 给脑"定位与本 Skill 一致 |
 | 结论 | **Web 方向是公开 skill 竞争最激烈的领域**（1317⭐/590⭐/366⭐ 三个高分仓库）；二进制卡密方向依旧空白 | 本 Skill 已把三家最高价值技法全部落地为自有工具与 playbook |
 
 ---

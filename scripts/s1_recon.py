@@ -603,6 +603,11 @@ def main():
             rec["zip_entries"] = len(z.namelist())
         step("ZIP 结构", True, "%d 条目" % rec["zip_entries"])
 
+    elif kind in ("HTML", "TEXT(utf8-bom)", "UNKNOWN"):
+        step("类型提示", False,
+             "%s 不是二进制/APK 目标 —— Web 页面请用 scripts/web_recon.py（--url / 目录 / HAR）" % kind)
+        rec["notes"].append("目标类型 %s 未匹配二进制分析分支；若是 Web 目标改用 scripts/web_recon.py" % kind)
+
     elif os.path.isdir(t):
         # Web 目录 / 解包目录
         ws = os.path.join(HERE, "web_kami_scan.py")
